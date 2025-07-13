@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Automation Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/app.js" defer></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>🏠 Home Automation</h1>
+            </div>
+            <div class="nav-links">
+                <a href="#devices" class="nav-link">Devices</a>
+                <a href="#sensors" class="nav-link">Sensors</a>
+                <a href="#settings" class="nav-link">Settings</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section id="dashboard" class="section">
+            <h2>Dashboard</h2>
+            <div class="status-cards">
+                <div class="status-card">
+                    <h3>System Status</h3>
+                    <div id="system-status" class="status-indicator">Loading...</div>
+                </div>
+                <div class="status-card">
+                    <h3>Active Devices</h3>
+                    <div id="device-count" class="status-value">-</div>
+                </div>
+                <div class="status-card">
+                    <h3>Sensors Online</h3>
+                    <div id="sensor-count" class="status-value">-</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="devices" class="section">
+            <h2>Devices</h2>
+            <div id="devices-container" class="devices-grid">
+                <!-- Devices will be loaded here -->
+            </div>
+        </section>
+
+        <section id="sensors" class="section">
+            <h2>Sensors</h2>
+            <div id="sensors-container" class="sensors-grid">
+                <!-- Sensors will be loaded here -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Home Automation System</p>
+    </footer>
+</body>
+</html>

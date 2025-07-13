@@ -1,0 +1,272 @@
+openapi: 3.0.3
+info:
+  title: Home Automation API
+  description: REST API for home automation system
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@homeautomation.local
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+paths:
+  /api/status:
+    get:
+      summary: Get system status
+      operationId: getStatus
+      tags:
+        - System
+      responses:
+        '200':
+          description: System status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatus'
+
+  /api/devices:
+    get:
+      summary: List all devices
+      operationId: listDevices
+      tags:
+        - Devices
+      responses:
+        '200':
+          description: List of devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+    post:
+      summary: Add a new device
+      operationId: addDevice
+      tags:
+        - Devices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceInput'
+      responses:
+        '201':
+          description: Device created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+
+  /api/devices/{deviceId}:
+    get:
+      summary: Get device by ID
+      operationId: getDevice
+      tags:
+        - Devices
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Device details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '404':
+          description: Device not found
+    put:
+      summary: Update device
+      operationId: updateDevice
+      tags:
+        - Devices
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceUpdate'
+      responses:
+        '200':
+          description: Device updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+
+  /api/devices/{deviceId}/command:
+    post:
+      summary: Send command to device
+      operationId: sendDeviceCommand
+      tags:
+        - Devices
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceCommand'
+      responses:
+        '200':
+          description: Command executed successfully
+
+  /api/sensors:
+    get:
+      summary: List all sensors
+      operationId: listSensors
+      tags:
+        - Sensors
+      responses:
+        '200':
+          description: List of sensors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sensor'
+
+  /api/sensors/{sensorId}:
+    get:
+      summary: Get sensor by ID
+      operationId: getSensor
+      tags:
+        - Sensors
+      parameters:
+        - name: sensorId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sensor details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sensor'
+
+components:
+  schemas:
+    SystemStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "ok"
+        uptime:
+          type: string
+          example: "24h"
+        devices_count:
+          type: integer
+          example: 5
+        sensors_count:
+          type: integer
+          example: 10
+
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "light-001"
+        name:
+          type: string
+          example: "Living Room Light"
+        type:
+          type: string
+          enum: [light, switch, climate, sensor, camera, lock]
+        status:
+          type: string
+          example: "on"
+        properties:
+          type: object
+          additionalProperties: true
+        last_updated:
+          type: string
+          format: date-time
+
+    DeviceInput:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [light, switch, climate, sensor, camera, lock]
+        properties:
+          type: object
+          additionalProperties: true
+
+    DeviceUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+        properties:
+          type: object
+          additionalProperties: true
+
+    DeviceCommand:
+      type: object
+      required:
+        - action
+      properties:
+        action:
+          type: string
+          example: "turn_on"
+        value:
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+        options:
+          type: object
+          additionalProperties: true
+
+    Sensor:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "temp-001"
+        name:
+          type: string
+          example: "Living Room Temperature"
+        type:
+          type: string
+          enum: [temperature, humidity, motion, light, door, window, smoke, pressure]
+        value:
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+        unit:
+          type: string
+          example: "°C"
+        last_updated:
+          type: string
+          format: date-time
