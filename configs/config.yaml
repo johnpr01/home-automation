@@ -28,6 +28,13 @@ mqtt:
     device_status: "homeautomation/devices/+/status"
     sensor_readings: "homeautomation/sensors/+/readings"
 
+kafka:
+  brokers: ["localhost:9092"]
+  log_topic: "home-automation-logs"
+  client_id: "home-automation-logger"
+  batch_size: 100
+  timeout: "5s"
+
 devices:
   discovery:
     enabled: true

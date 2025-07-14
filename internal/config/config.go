@@ -8,6 +8,7 @@ type Config struct {
 	Port     string
 	Database string
 	MQTT     MQTTConfig
+	Kafka    KafkaConfig
 }
 
 type MQTTConfig struct {
@@ -15,6 +16,14 @@ type MQTTConfig struct {
 	Port     string
 	Username string
 	Password string
+}
+
+type KafkaConfig struct {
+	Brokers   []string
+	LogTopic  string
+	ClientID  string
+	BatchSize int
+	Timeout   string
 }
 
 func Load() *Config {
@@ -26,6 +35,13 @@ func Load() *Config {
 			Port:     getEnv("MQTT_PORT", "1883"),
 			Username: getEnv("MQTT_USERNAME", ""),
 			Password: getEnv("MQTT_PASSWORD", ""),
+		},
+		Kafka: KafkaConfig{
+			Brokers:   []string{getEnv("KAFKA_BROKERS", "localhost:9092")},
+			LogTopic:  getEnv("KAFKA_LOG_TOPIC", "home-automation-logs"),
+			ClientID:  getEnv("KAFKA_CLIENT_ID", "home-automation-logger"),
+			BatchSize: 100,
+			Timeout:   "5s",
 		},
 	}
 }
