@@ -35,6 +35,8 @@ home-automation/
 │   │   └── light.go
 │   ├── mqtt/              # MQTT client
 │   │   └── client.go
+│   ├── kafka/             # Kafka client for logging
+│   │   └── client.go
 │   └── sensors/           # Sensor implementations
 │       └── temperature.go
 │
@@ -100,10 +102,18 @@ home-automation/
 ## 🐳 Docker Support
 
 ```bash
-# Build and run with Docker Compose
+# Build and run with Docker Compose (includes Kafka, PostgreSQL, MQTT, Redis, Grafana)
 cd deployments
 docker-compose up --build
 ```
+
+### Services Included:
+- **Home Automation Server**: Main application (port 8080)
+- **PostgreSQL**: Database storage (port 5432)
+- **MQTT Broker**: IoT device communication (ports 1883, 9001)
+- **Kafka**: Log streaming with KRaft mode (ports 9092, 9093)
+- **Redis**: Caching layer (port 6379)
+- **Grafana**: Monitoring dashboard (port 3000)
 
 ## 📡 API Endpoints
 
@@ -112,12 +122,50 @@ docker-compose up --build
 - `POST /api/devices/{id}/command` - Control devices
 - `GET /api/sensors` - List sensors
 
+## 📊 Logging & Monitoring
+
+### Dual Logging System
+The system implements a comprehensive logging approach:
+
+- **File Logging**: Local logs stored in `logs/device_service.log`
+- **Kafka Streaming**: Real-time log streaming to Kafka topics for centralized monitoring
+
+### Kafka Integration
+- **Topic**: `home-automation-logs`
+- **Format**: Structured JSON messages with metadata
+- **KRaft Mode**: Uses modern Kafka without Zookeeper dependency
+- **Auto-scaling**: Supports distributed log aggregation
+
+### Log Message Structure
+```json
+{
+  "timestamp": "2025-07-14T10:30:15Z",
+  "level": "INFO",
+  "service": "DeviceService",
+  "message": "Light light-001 turned on",
+  "device_id": "light-001",
+  "action": "turn_on",
+  "metadata": {
+    "status": "on",
+    "power": true,
+    "device_type": "light"
+  }
+}
+```
+
+### Monitoring Capabilities
+- **Device Operations**: All device commands and status changes
+- **Performance Metrics**: Command execution timing and success rates
+- **Error Tracking**: Centralized error collection and alerting
+- **MQTT Monitoring**: Temperature publishing and communication status
+
 ## 🏠 Features
 
 ### Core Components
 - **Device Management**: Control lights, switches, climate systems
 - **Sensor Monitoring**: Temperature, humidity, motion, and more
 - **MQTT Integration**: Standard IoT communication protocol
+- **Kafka Logging**: Real-time log streaming and aggregation
 - **REST API**: Complete HTTP API for integrations
 - **Web Dashboard**: Modern, responsive web interface
 - **CLI Tools**: Command-line utilities for administration
@@ -132,6 +180,7 @@ docker-compose up --build
 - **Modular Design**: Clean separation of concerns
 - **Extensible**: Easy to add new device types
 - **Production Ready**: Docker support, logging, configuration management
+- **Real-time Logging**: Kafka-based log streaming for monitoring and analytics
 - **Testing**: Comprehensive test suite
 
 ## 🔧 Configuration
@@ -140,6 +189,7 @@ Edit `configs/config.yaml` to customize:
 - Server settings (port, timeouts)
 - Database configuration
 - MQTT broker settings
+- Kafka logging configuration
 - Device discovery options
 - Logging configuration
 

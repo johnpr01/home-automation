@@ -9,8 +9,8 @@ import (
 func main() {
 	var (
 		command = flag.String("cmd", "", "Command to execute (status, devices, sensors)")
-		device  = flag.String("device", "", "Device ID")
-		action  = flag.String("action", "", "Action to perform")
+		//device  = flag.String("device", "", "Device ID")
+		//action  = flag.String("action", "", "Action to perform")
 	)
 	flag.Parse()
 

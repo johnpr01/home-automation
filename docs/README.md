@@ -8,6 +8,7 @@ This directory contains comprehensive documentation for the home automation syst
 - [API Documentation](./api.md)
 - [Device Integration Guide](./devices.md)
 - [MQTT Protocol](./mqtt.md)
+- [Kafka Logging System](./kafka-logging.md)
 - [Configuration Reference](./configuration.md)
 - [Deployment Guide](./deployment.md)
 - [Development Setup](./development.md)
@@ -19,6 +20,7 @@ This directory contains comprehensive documentation for the home automation syst
 2. **Configuration**: Review [Configuration Reference](./configuration.md)
 3. **API Usage**: Check [API Documentation](./api.md)
 4. **Device Integration**: Follow [Device Integration Guide](./devices.md)
+5. **Logging Setup**: Configure [Kafka Logging System](./kafka-logging.md)
 
 ## Architecture
 
@@ -46,6 +48,14 @@ The system follows a modular architecture with the following components:
          │  │ (SQLite/PG) │  │   (Redis)   │              │
          │  └─────────────┘  └─────────────┘              │
          └─────────────────────────────────────────────────┘
+                                 │
+         ┌─────────────────────────────────────────────────┐
+         │            Monitoring Layer                     │
+         │  ┌─────────────┐  ┌─────────────┐              │
+         │  │    Kafka    │  │   Grafana   │              │
+         │  │  (Logging)  │  │(Monitoring) │              │
+         │  └─────────────┘  └─────────────┘              │
+         └─────────────────────────────────────────────────┘
 ```
 
 ## Key Features
@@ -53,6 +63,7 @@ The system follows a modular architecture with the following components:
 - **Device Management**: Control lights, switches, climate systems, and more
 - **Sensor Monitoring**: Real-time data collection from various sensors
 - **MQTT Integration**: Standardized communication protocol for IoT devices
+- **Kafka Logging**: Real-time log streaming and centralized monitoring
 - **REST API**: Complete HTTP API for integration with external systems
 - **Web Interface**: User-friendly web dashboard
 - **CLI Tools**: Command-line utilities for system administration
