@@ -63,15 +63,22 @@ func main() {
 	// Create Tapo service
 	tapoService := services.NewTapoService(mqttClient, influxClient, serviceLogger)
 
+	// Get password from environment variable (GitHub Actions secret)
+	tplinkPassword := os.Getenv("TPLINK_PASSWORD")
+	if tplinkPassword == "" {
+		serviceLogger.Error("TPLINK_PASSWORD environment variable not set", nil)
+		return
+	}
+
 	// Add example Tapo devices (replace with your actual device details)
 	exampleDevices := []*services.TapoConfig{
 		{
-			DeviceID:     "tapo_living_room_1",
-			DeviceName:   "Living Room Lamp",
-			RoomID:       "living_room",
-			IPAddress:    "192.168.1.100",      // Replace with your device IP
-			Username:     "your_tapo_username", // Replace with your Tapo account username
-			Password:     "your_tapo_password", // Replace with your Tapo account password
+			DeviceID:     "dryer",
+			DeviceName:   "dryer",
+			RoomID:       "laundry_room",
+			IPAddress:    "192.168.68.54",      // Replace with your device IP
+			Username:     "johnpr01@gmail.com", // Replace with your Tapo account username
+			Password:     tplinkPassword,       // Using environment variable from GitHub Actions secret
 			PollInterval: 30 * time.Second,
 		},
 		{
@@ -79,8 +86,8 @@ func main() {
 			DeviceName:   "Kitchen Coffee Maker",
 			RoomID:       "kitchen",
 			IPAddress:    "192.168.1.101",      // Replace with your device IP
-			Username:     "your_tapo_username", // Replace with your Tapo account username
-			Password:     "your_tapo_password", // Replace with your Tapo account password
+			Username:     "johnpr01@gmail.com", // Replace with your Tapo account username
+			Password:     tplinkPassword,       // Using environment variable from GitHub Actions secret
 			PollInterval: 30 * time.Second,
 		},
 		{
@@ -88,8 +95,8 @@ func main() {
 			DeviceName:   "Office Monitor",
 			RoomID:       "office",
 			IPAddress:    "192.168.1.102",      // Replace with your device IP
-			Username:     "your_tapo_username", // Replace with your Tapo account username
-			Password:     "your_tapo_password", // Replace with your Tapo account password
+			Username:     "johnpr01@gmail.com", // Replace with your Tapo account username
+			Password:     tplinkPassword,       // Using environment variable from GitHub Actions secret
 			PollInterval: 60 * time.Second,
 		},
 	}

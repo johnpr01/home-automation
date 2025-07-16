@@ -41,6 +41,8 @@ jobs:
       run: go mod verify
       
     - name: Run unit tests
+      env:
+        TPLINK_PASSWORD: ${{ secrets.TPLINK_PASSWORD }}
       run: |
         go test -v -race -coverprofile=coverage.out ./...
         

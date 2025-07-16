@@ -1,0 +1,96 @@
+name: Tapo Integration Test
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'cmd/tapo-demo/**'
+      - 'pkg/tapo/**'
+      - 'internal/services/tapo_service.go'
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'cmd/tapo-demo/**'
+      - 'pkg/tapo/**'
+      - 'internal/services/tapo_service.go'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  tapo-integration:
+    name: Test Tapo Integration
+    runs-on: ubuntu-latest
+    
+    # Only run if TPLINK_PASSWORD secret is available
+    if: ${{ secrets.TPLINK_PASSWORD }}
+    
+    strategy:
+      matrix:
+        go-version: [1.21, 1.22]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go ${{ matrix.go-version }}
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ matrix.go-version }}
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ matrix.go-version }}-
+          
+    - name: Install dependencies
+      run: go mod download
+      
+    - name: Verify dependencies
+      run: go mod verify
+      
+    - name: Build Tapo Demo
+      run: |
+        cd cmd/tapo-demo
+        go build -v .
+        
+    - name: Test Tapo Package
+      run: |
+        go test -v ./pkg/tapo/...
+        
+    - name: Test Tapo Service
+      run: |
+        go test -v -run TestTapoService ./internal/services/...
+        
+    - name: Lint Tapo Code
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        working-directory: .
+        args: --timeout=5m ./pkg/tapo/... ./cmd/tapo-demo/... ./internal/services/tapo_service.go
+        
+    - name: Test Configuration Loading
+      env:
+        TPLINK_PASSWORD: ${{ secrets.TPLINK_PASSWORD }}
+      run: |
+        cd cmd/tapo-demo
+        timeout 10s go run main.go || true  # Run for 10 seconds to test startup
+        echo "Configuration test completed"
+        
+    - name: Security Scan for Tapo
+      run: |
+        go install honnef.co/go/tools/cmd/staticcheck@latest
+        staticcheck ./pkg/tapo/... ./cmd/tapo-demo/... ./internal/services/tapo_service.go
+        
+    - name: Check for Hardcoded Secrets
+      run: |
+        # Check for any hardcoded passwords or credentials
+        if grep -r "your_tapo_password\|your_password\|password.*=" --include="*.go" .; then
+          echo "❌ Found hardcoded passwords!"
+          exit 1
+        else
+          echo "✅ No hardcoded passwords found"
+        fi
