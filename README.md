@@ -1,6 +1,37 @@
 # Home Automation Project
 
-A comprehensive Go-based home automation system optimized for **Raspberry Pi 5** deployment, featuring web interface, REST API, MQTT support, and Kafka logging.
+A comprehensive Go-based home automation system with **Smart Thermostat Framework** optimized for **Raspberry Pi 5** deployment, featuring IoT sensor integration, MQTT communication, and intelligent temperature control using **Fahrenheit**.
+
+## 🌡️ Smart Thermostat System
+
+**NEW: Complete smart thermostat framework with Pi Pico WH sensors!**
+
+- **Intelligent Temperature Control**: Automatic heating/cooling with hysteresis
+- **Pi Pico Integration**: SHT-30 temperature/humidity sensors via MQTT
+- **Fahrenheit Operation**: All temperatures in Fahrenheit for US users
+- **Multi-Zone Support**: Control multiple rooms independently
+- **Real-time Processing**: 30-second control loops with instant sensor response
+
+### Quick Thermostat Setup
+
+1. **Deploy Pi Pico sensors:**
+   ```bash
+   cd firmware/pico-sht30
+   # Configure WiFi and MQTT settings
+   cp config_template.py config.py
+   # Flash to Pi Pico WH with SHT-30 sensor
+   ```
+
+2. **Start thermostat service:**
+   ```bash
+   cd cmd/thermostat
+   go build && ./thermostat
+   ```
+
+3. **Monitor temperature control:**
+   - Listens to: `room-temp/{room_id}` and `room-hum/{room_id}`
+   - Controls: Automatic heating/cooling based on target temperature
+   - Default: 70°F target with 1°F hysteresis
 
 ## 🏗️ Project Structure
 
@@ -16,6 +47,10 @@ home-automation/
 ├── cmd/                     # Main applications
 │   ├── server/             # Web server and API
 │   │   └── main.go
+│   ├── thermostat/         # Smart thermostat service
+│   │   └── main.go         # Thermostat control with MQTT
+│   ├── temp-demo/          # Temperature conversion demo
+│   │   └── main.go
 │   └── cli/                # Command-line interface
 │       └── main.go
 │
@@ -26,9 +61,11 @@ home-automation/
 │   │   └── handlers.go
 │   ├── models/            # Data models
 │   │   ├── device.go
-│   │   └── sensor.go
+│   │   ├── sensor.go
+│   │   └── thermostat.go  # Smart thermostat models (Fahrenheit)
 │   └── services/          # Business logic
-│       └── device_service.go
+│       ├── device_service.go
+│       └── thermostat_service.go # Thermostat control logic
 │
 ├── pkg/                    # Public library code
 │   ├── devices/           # Device implementations
@@ -37,8 +74,11 @@ home-automation/
 │   │   └── client.go
 │   ├── kafka/             # Kafka client for logging
 │   │   └── client.go
-│   └── sensors/           # Sensor implementations
-│       └── temperature.go
+│   ├── sensors/           # Sensor implementations
+│   │   └── temperature.go
+│   └── utils/             # Utility functions
+│       ├── temperature.go # Fahrenheit/Celsius conversion
+│       └── temperature_test.go
 │
 ├── api/                    # API specifications
 │   └── openapi.yaml       # OpenAPI/Swagger documentation
@@ -59,27 +99,33 @@ home-automation/
 │   └── setup.sh          # Development environment setup
 │
 ├── docs/                  # Documentation
-│   └── README.md         # Documentation index
+│   ├── README.md         # Documentation index
+│   ├── THERMOSTAT.md     # Smart thermostat guide
+│   └── FAHRENHEIT_CONVERSION.md # Fahrenheit conversion details
 │
 ├── test/                  # Test files
 │   └── device_test.go    # Example tests
 │
 ├── firmware/             # IoT device firmware
 │   └── pico-sht30/      # Pi Pico WH SHT-30 sensor firmware
-│       ├── main.py      # MicroPython main application
+│       ├── main.py      # MicroPython main application (Fahrenheit)
 │       ├── sht30.py     # SHT-30 sensor driver
 │       ├── config_template.py # Configuration template
 │       ├── deploy.sh    # Firmware deployment script
 │       └── README.md    # Firmware documentation
 │
-└── deployments/          # Raspberry Pi 5 deployment
-    ├── docker-compose.yml # Optimized for Pi 5
-    ├── deploy-pi5.sh     # Automated Pi 5 deployment
-    ├── scripts/          # Management scripts
-    │   ├── health-check.sh # System health monitoring
-    │   ├── backup.sh     # Backup script
-    │   └── restore.sh    # Restore script
-    └── README.md         # Pi 5 deployment guide
+├── deployments/          # Raspberry Pi 5 deployment
+│   ├── docker-compose.yml # Optimized for Pi 5
+│   ├── deploy-pi5.sh     # Automated Pi 5 deployment
+│   ├── mosquitto/        # MQTT broker configuration
+│   │   ├── mosquitto.conf # Mosquitto configuration
+│   │   ├── acl.example   # Access control template
+│   │   └── passwd.example # Password file template
+│   ├── scripts/          # Management scripts
+│   │   ├── health-check.sh # System health monitoring
+│   │   ├── backup.sh     # Backup script
+│   │   └── restore.sh    # Restore script
+│   └── README.md         # Pi 5 deployment guide
 ```
 
 ## 🍓 Raspberry Pi 5 Deployment
@@ -105,6 +151,7 @@ home-automation/
 
 3. **Access your services:**
    - **Home Automation API**: `http://YOUR_PI_IP:8080`
+   - **Smart Thermostat**: Automatic control via MQTT
    - **Grafana Dashboard**: `http://YOUR_PI_IP:3000` (admin/homeauto2024)
    - **MQTT Broker**: `YOUR_PI_IP:1883`
 
@@ -132,12 +179,17 @@ If you prefer manual setup or need customization:
 
 ## 🛠️ Development Commands
 
-- `make build` - Build all binaries
-- `make test` - Run tests
+- `make build` - Build all binaries (including thermostat service)
+- `make test` - Run tests (including temperature conversion tests)
 - `make fmt` - Format code
 - `make lint` - Lint code (requires golangci-lint)
 - `make dev` - Run with hot reload (requires air)
 - `make help` - Show all available commands
+
+### Thermostat Development
+- `go run ./cmd/thermostat/` - Run thermostat service locally
+- `go run ./cmd/temp-demo/` - Demo temperature conversions
+- `go test ./pkg/utils/` - Test temperature conversion utilities
 
 ## 🐳 Raspberry Pi 5 Services
 
@@ -145,6 +197,7 @@ The system runs the following services optimized for Raspberry Pi 5:
 
 ### Core Services:
 - **Home Automation API** (Port 8080) - Main application server
+- **Smart Thermostat Service** - Intelligent temperature control (Fahrenheit)
 - **PostgreSQL** (Port 5432) - Database with Pi-optimized settings  
 - **Mosquitto MQTT** (Port 1883/9001) - Message broker for IoT devices
 - **Redis** (Port 6379) - Caching and session storage
@@ -158,32 +211,48 @@ The system runs the following services optimized for Raspberry Pi 5:
 - Efficient logging with rotation
 - SD card-friendly persistence settings
 
-## 📱 IoT Device Support
+## 🌡️ Smart Thermostat Features
 
-### Pi Pico WH + SHT-30 Sensor
+### Temperature Control (Fahrenheit)
+- **Intelligent Control**: Automatic heating/cooling with 1°F hysteresis
+- **Target Temperature**: Default 70°F (adjustable 50°F - 95°F)
+- **Multi-Mode**: Heat, Cool, Auto, Fan, and Off modes
+- **Safety Limits**: Configurable min/max temperature protection
+- **Calibration**: Temperature offset support for sensor accuracy
 
-Deploy temperature and humidity sensors throughout your home:
+### Pi Pico Integration
+Deploy SHT-30 temperature/humidity sensors throughout your home:
 
-1. **Setup the sensor:**
+1. **Configure sensor:**
    ```bash
    cd firmware/pico-sht30
    cp config_template.py config.py
-   # Edit config.py with your Pi 5 IP and WiFi settings
+   # Edit with your Pi 5 IP and room assignment
    ```
 
-2. **Deploy firmware:**
+2. **Flash firmware:**
    ```bash
-   ./deploy.sh
+   # Copy files to Pi Pico WH
+   # Sensor automatically sends Fahrenheit temperatures
    ```
 
-3. **Monitor sensor data:**
+3. **Monitor thermostat:**
    ```bash
-   python3 mqtt_monitor.py YOUR_PI5_IP
+   # Thermostat service logs show real-time control decisions
+   cd cmd/thermostat && go run main.go
    ```
 
-### MQTT Topics:
-- Temperature: `room-temp/{room_number}`
-- Humidity: `room-hum/{room_number}`
+### MQTT Topics (Fahrenheit):
+- **Temperature**: `room-temp/{room_number}` (°F)
+- **Humidity**: `room-hum/{room_number}` (%)
+- **Control**: `room-control/{room_number}` (heating/cooling commands)
+
+### Example Operation:
+**Target: 70°F, Hysteresis: 1°F**
+- 🔥 Heat ON: Temperature drops below 69.5°F
+- 🔥 Heat OFF: Temperature reaches 70°F
+- ❄️ Cool ON: Temperature rises above 70.5°F  
+- ❄️ Cool OFF: Temperature reaches 70°F
 
 ## 🔧 Management & Monitoring
 
@@ -222,11 +291,19 @@ docker compose pull && docker compose up -d
 
 ## 📡 API Endpoints
 
+### Core System
 - `GET /api/status` - System status
 - `GET /api/devices` - List devices  
 - `POST /api/devices/{id}/command` - Control devices
 - `GET /api/sensors` - List sensors
 - `GET /health` - Health check endpoint
+
+### Smart Thermostat API (Coming Soon)
+- `GET /api/thermostats` - List all thermostats
+- `GET /api/thermostats/{id}` - Get thermostat details
+- `PUT /api/thermostats/{id}/target` - Set target temperature (°F)
+- `PUT /api/thermostats/{id}/mode` - Set operation mode
+- `GET /api/thermostats/{id}/history` - Temperature history
 
 ## 📊 Logging & Monitoring
 
@@ -246,30 +323,40 @@ The system implements a comprehensive logging approach optimized for Raspberry P
 ### Log Message Structure
 ```json
 {
-  "timestamp": "2025-07-14T10:30:15Z",
+  "timestamp": "2025-07-16T10:30:15Z",
   "level": "INFO", 
-  "service": "DeviceService",
-  "message": "Temperature sensor reading: 22.5°C",
-  "device_id": "light-001",
-  "action": "turn_on",
+  "service": "ThermostatService",
+  "message": "Updated thermostat living-room: 68.5°F -> 69.2°F",
+  "thermostat_id": "thermostat-001",
+  "room_id": "living-room",
+  "action": "temperature_update",
   "metadata": {
-    "status": "on",
-    "power": true,
-    "device_type": "light"
+    "current_temp": 69.2,
+    "target_temp": 70.0,
+    "mode": "auto",
+    "status": "heating",
+    "unit": "fahrenheit"
   }
-  "room": "living-room",
-  "device_id": "pico-sht30-room1"
 }
 ```
 
 ### Monitoring Capabilities
-- **Device Operations**: All device commands and status changes
+- **Thermostat Operations**: Temperature updates, mode changes, heating/cooling cycles
+- **Device Control**: All device commands and status changes
 - **Performance Metrics**: Command execution timing and success rates  
 - **Error Tracking**: Centralized error collection and alerting
-- **IoT Sensor Data**: Temperature, humidity monitoring from Pi Pico sensors
+- **IoT Sensor Data**: Temperature (°F), humidity monitoring from Pi Pico sensors
 - **System Health**: Raspberry Pi 5 resource monitoring (CPU, memory, temperature)
 
 ## 🏠 Features
+
+### Smart Thermostat System
+- **Intelligent Temperature Control**: Automatic heating/cooling with hysteresis (Fahrenheit)
+- **Multi-Zone Support**: Independent control for multiple rooms
+- **Pi Pico Integration**: SHT-30 sensors with real-time MQTT communication
+- **Advanced Control Logic**: Prevents short cycling, maintains comfort
+- **Safety Features**: Min/max temperature limits, sensor validation
+- **Energy Optimization**: Efficient heating/cooling cycles
 
 ### Core Components
 - **Device Management**: Control lights, switches, climate systems
@@ -281,10 +368,11 @@ The system implements a comprehensive logging approach optimized for Raspberry P
 - **CLI Tools**: Command-line utilities for administration
 
 ### Device Types Supported
+- **Smart Thermostats**: Automatic temperature control (Fahrenheit)
 - **Lights**: On/off, dimming, color control
 - **Switches**: Simple on/off control  
 - **Climate**: Temperature and mode control
-- **IoT Sensors**: Pi Pico WH with SHT-30 (temperature/humidity)
+- **IoT Sensors**: Pi Pico WH with SHT-30 (temperature/humidity in °F)
 - **Environmental**: Various sensor types with real-time readings
 
 ### Raspberry Pi 5 Architecture  
@@ -295,6 +383,17 @@ The system implements a comprehensive logging approach optimized for Raspberry P
 - **Scalable**: Support for multiple Pi Pico sensors across rooms
 
 ## 🔧 Configuration
+
+### Smart Thermostat Configuration
+The thermostat service uses Fahrenheit by default. Key settings:
+
+```go
+// Default Fahrenheit values
+DefaultTargetTemp    = 70.0°F  // Comfortable room temperature
+DefaultHysteresis    = 1.0°F   // Prevents short cycling  
+DefaultMinTemp       = 50.0°F  // Safety minimum
+DefaultMaxTemp       = 95.0°F  // Safety maximum
+```
 
 ### Main Configuration
 Edit `configs/config.yaml` or `.env` to customize:
@@ -309,12 +408,15 @@ Edit `firmware/pico-sht30/config.py`:
 - WiFi credentials
 - Raspberry Pi 5 MQTT broker IP
 - Room assignment and device naming
+- Temperature unit (Fahrenheit by default)
 - Reading intervals and GPIO pins
 - Logging configuration
 
 ## 📚 Documentation
 
 See the `docs/` directory for detailed documentation:
+- `THERMOSTAT.md` - Complete smart thermostat guide
+- `FAHRENHEIT_CONVERSION.md` - Temperature conversion details
 - Architecture overview
 - API reference
 - Device integration guide
@@ -343,4 +445,6 @@ For questions and support:
 
 ---
 
-**Note**: This is a complete Go project structure following best practices for home automation systems. The code includes working examples for devices, sensors, API handlers, and a modern web interface.
+🌡️ **Smart Thermostat System**: Your home automation now includes intelligent temperature control using Fahrenheit, with Pi Pico sensors and automatic heating/cooling management optimized for Raspberry Pi 5!
+
+**Note**: This is a complete Go project structure following best practices for home automation systems. The code includes working examples for devices, sensors, API handlers, smart thermostat control, and a modern web interface.
