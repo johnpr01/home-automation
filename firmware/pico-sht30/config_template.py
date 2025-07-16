@@ -20,9 +20,24 @@ READING_INTERVAL = 5  # Seconds between readings
 I2C_SDA_PIN = 4  # GPIO pin for I2C SDA
 I2C_SCL_PIN = 5  # GPIO pin for I2C SCL
 
+# PIR Motion Sensor Configuration
+PIR_SENSOR_PIN = 2  # GPIO pin for PIR sensor data (default GP2)
+PIR_ENABLED = True  # Set to False to disable PIR sensor
+PIR_DEBOUNCE_TIME = 2  # Seconds to wait before detecting motion again
+PIR_TIMEOUT = 30  # Seconds after which motion is considered to have stopped
+
+# Photo Transistor Light Sensor Configuration
+LIGHT_SENSOR_PIN = 28  # GPIO pin for photo transistor (ADC2, default GP28)
+LIGHT_ENABLED = True  # Set to False to disable light sensor
+LIGHT_THRESHOLD_LOW = 10  # Percentage below which it's considered dark (0-100)
+LIGHT_THRESHOLD_HIGH = 80  # Percentage above which it's considered bright (0-100)
+LIGHT_READING_INTERVAL = 10  # Seconds between light level readings
+
 # MQTT Topics (will be formatted with room number)
 TEMP_TOPIC_TEMPLATE = "room-temp/{room}"
 HUM_TOPIC_TEMPLATE = "room-hum/{room}"
+MOTION_TOPIC_TEMPLATE = "room-motion/{room}"
+LIGHT_TOPIC_TEMPLATE = "room-light/{room}"
 
 # Advanced Settings
 MAX_WIFI_RETRIES = 30

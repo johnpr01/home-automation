@@ -40,8 +40,9 @@ The smart thermostat system consists of:
 ### Sensor Input Topics
 - `room-temp/{room_id}`: Temperature readings from Pi Pico sensors
 - `room-hum/{room_id}`: Humidity readings from Pi Pico sensors
+- `room-motion/{room_id}`: Motion detection from PIR sensors
 
-**Payload Format (from Pi Pico):**
+**Temperature/Humidity Payload Format (from Pi Pico):**
 ```json
 {
   "temperature": 72.5,
@@ -49,6 +50,18 @@ The smart thermostat system consists of:
   "room": "1",
   "sensor": "SHT-30",
   "timestamp": 1640995200,
+  "device_id": "pico-living-room"
+}
+```
+
+**Motion Detection Payload Format (from Pi Pico):**
+```json
+{
+  "motion": true,
+  "room": "1", 
+  "sensor": "PIR",
+  "timestamp": 1640995200,
+  "motion_start": 1640995195,
   "device_id": "pico-living-room"
 }
 ```
@@ -170,8 +183,12 @@ The service provides detailed logging:
 # Check MQTT messages
 mosquitto_sub -h localhost -t "room-temp/+"
 mosquitto_sub -h localhost -t "room-hum/+"
+mosquitto_sub -h localhost -t "room-motion/+"
 mosquitto_sub -h localhost -t "room-control/+"
 
 # Test Pi Pico connection
 mosquitto_pub -h localhost -t "room-temp/1" -m '{"temperature":70.5,"unit":"°F","room":"1","sensor":"SHT-30","timestamp":1640995200,"device_id":"test"}'
+
+# Test motion detection
+mosquitto_pub -h localhost -t "room-motion/1" -m '{"motion":true,"room":"1","sensor":"PIR","timestamp":1640995200,"device_id":"test"}'
 ```

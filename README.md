@@ -1,6 +1,11 @@
 # Home Automation Project
 
-A comprehensive Go-based home automation system with **Smart Thermostat Framework** optimized for **Raspberry Pi 5** deployment, featuring IoT sensor integration, MQTT communication, and intelligent temperature control using **Fahrenheit**.
+A comprehensive Go-based home    ├── motion/             # Motion detection service
+   │   └── main.go         # PIR sensor monitoring and occupancy tracking
+   ├── light/              # Light sensor service
+   │   └── main.go         # Photo transistor ambient light monitoring
+   ├── integrated/         # Optional integrated service
+   │   └── main.go         # Combined motion + light + thermostat with callbacksmation system with **Smart Thermostat Framework** optimized for **Raspberry Pi 5** deployment, featuring IoT sensor integration, MQTT communication, and intelligent temperature control using **Fahrenheit**.
 
 ## 🌡️ Smart Thermostat System
 
@@ -22,14 +27,23 @@ A comprehensive Go-based home automation system with **Smart Thermostat Framewor
    # Flash to Pi Pico WH with SHT-30 sensor
    ```
 
-2. **Start thermostat service:**
+2. **Start services (choose one option):**
    ```bash
-   cd cmd/thermostat
-   go build && ./thermostat
+   # Option A: Thermostat service only
+   cd cmd/thermostat && go run main.go
+   
+   # Option B: Motion detection service only  
+   cd cmd/motion && go run main.go
+   
+   # Option C: Light sensor service only
+   cd cmd/light && go run main.go
+   
+   # Option D: All services with integration
+   cd cmd/integrated && go run main.go
    ```
 
 3. **Monitor temperature control:**
-   - Listens to: `room-temp/{room_id}` and `room-hum/{room_id}`
+   - Listens to: `room-temp/{room_id}`, `room-hum/{room_id}`, and `room-motion/{room_id}`
    - Controls: Automatic heating/cooling based on target temperature
    - Default: 70°F target with 1°F hysteresis
 
@@ -48,7 +62,11 @@ home-automation/
 │   ├── server/             # Web server and API
 │   │   └── main.go
 │   ├── thermostat/         # Smart thermostat service
-│   │   └── main.go         # Thermostat control with MQTT
+│   │   └── main.go         # Thermostat control with MQTT  
+│   ├── motion/             # Motion detection service
+│   │   └── main.go         # PIR sensor monitoring and occupancy tracking
+│   ├── integrated/         # Optional integrated service
+│   │   └── main.go         # Combined motion + thermostat with callbacks
 │   ├── temp-demo/          # Temperature conversion demo
 │   │   └── main.go
 │   └── cli/                # Command-line interface
@@ -62,10 +80,11 @@ home-automation/
 │   ├── models/            # Data models
 │   │   ├── device.go
 │   │   ├── sensor.go
-│   │   └── thermostat.go  # Smart thermostat models (Fahrenheit)
-│   └── services/          # Business logic
-│       ├── device_service.go
-│       └── thermostat_service.go # Thermostat control logic
+│   │   └── thermostat.go  # Smart thermostat models (Fahrenheit)   │   └── services/          # Business logic
+   │       ├── device_service.go
+   │       ├── thermostat_service.go # Thermostat control logic (HVAC focused)
+   │       ├── motion_service.go     # Motion detection and room occupancy
+   │       └── light_service.go      # Light sensor monitoring and ambient light tracking
 │
 ├── pkg/                    # Public library code
 │   ├── devices/           # Device implementations
@@ -197,7 +216,9 @@ The system runs the following services optimized for Raspberry Pi 5:
 
 ### Core Services:
 - **Home Automation API** (Port 8080) - Main application server
-- **Smart Thermostat Service** - Intelligent temperature control (Fahrenheit)
+- **Smart Thermostat Service** - Intelligent HVAC temperature control (Fahrenheit)
+- **Motion Detection Service** - PIR sensor monitoring and room occupancy tracking
+- **Light Sensor Service** - Photo transistor ambient light monitoring and day/night detection
 - **PostgreSQL** (Port 5432) - Database with Pi-optimized settings  
 - **Mosquitto MQTT** (Port 1883/9001) - Message broker for IoT devices
 - **Redis** (Port 6379) - Caching and session storage
@@ -221,30 +242,31 @@ The system runs the following services optimized for Raspberry Pi 5:
 - **Calibration**: Temperature offset support for sensor accuracy
 
 ### Pi Pico Integration
-Deploy SHT-30 temperature/humidity sensors throughout your home:
+Deploy SHT-30 temperature/humidity sensors with PIR motion detection throughout your home:
 
 1. **Configure sensor:**
    ```bash
    cd firmware/pico-sht30
    cp config_template.py config.py
-   # Edit with your Pi 5 IP and room assignment
+   # Edit with your Pi 5 IP, room assignment, and enable PIR sensor
    ```
 
 2. **Flash firmware:**
    ```bash
    # Copy files to Pi Pico WH
-   # Sensor automatically sends Fahrenheit temperatures
+   # Sensor automatically sends Fahrenheit temperatures and motion events
    ```
 
 3. **Monitor thermostat:**
    ```bash
-   # Thermostat service logs show real-time control decisions
+   # Thermostat service logs show real-time control decisions and motion detection
    cd cmd/thermostat && go run main.go
    ```
 
 ### MQTT Topics (Fahrenheit):
 - **Temperature**: `room-temp/{room_number}` (°F)
 - **Humidity**: `room-hum/{room_number}` (%)
+- **Motion**: `room-motion/{room_number}` (boolean)
 - **Control**: `room-control/{room_number}` (heating/cooling commands)
 
 ### Example Operation:
@@ -342,10 +364,11 @@ The system implements a comprehensive logging approach optimized for Raspberry P
 
 ### Monitoring Capabilities
 - **Thermostat Operations**: Temperature updates, mode changes, heating/cooling cycles
+- **Motion Detection**: Room occupancy monitoring from PIR sensors
 - **Device Control**: All device commands and status changes
 - **Performance Metrics**: Command execution timing and success rates  
 - **Error Tracking**: Centralized error collection and alerting
-- **IoT Sensor Data**: Temperature (°F), humidity monitoring from Pi Pico sensors
+- **IoT Sensor Data**: Temperature (°F), humidity, and motion monitoring from Pi Pico sensors
 - **System Health**: Raspberry Pi 5 resource monitoring (CPU, memory, temperature)
 
 ## 🏠 Features
@@ -369,10 +392,11 @@ The system implements a comprehensive logging approach optimized for Raspberry P
 
 ### Device Types Supported
 - **Smart Thermostats**: Automatic temperature control (Fahrenheit)
+- **Motion Sensors**: PIR motion detection with MQTT alerts
 - **Lights**: On/off, dimming, color control
 - **Switches**: Simple on/off control  
 - **Climate**: Temperature and mode control
-- **IoT Sensors**: Pi Pico WH with SHT-30 (temperature/humidity in °F)
+- **IoT Sensors**: Pi Pico WH with SHT-30 (temperature/humidity in °F) + PIR motion
 - **Environmental**: Various sensor types with real-time readings
 
 ### Raspberry Pi 5 Architecture  

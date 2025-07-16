@@ -26,9 +26,34 @@ except ImportError:
 # Generate MQTT topics from configuration
 TEMP_TOPIC = TEMP_TOPIC_TEMPLATE.format(room=ROOM_NUMBER)
 HUM_TOPIC = HUM_TOPIC_TEMPLATE.format(room=ROOM_NUMBER)
+MOTION_TOPIC = MOTION_TOPIC_TEMPLATE.format(room=ROOM_NUMBER)
+LIGHT_TOPIC = LIGHT_TOPIC_TEMPLATE.format(room=ROOM_NUMBER)
 
 # LED for status indication
 led = Pin("LED", Pin.OUT)
+
+# PIR sensor setup (if enabled)
+pir_sensor = None
+if PIR_ENABLED:
+    pir_sensor = Pin(PIR_SENSOR_PIN, Pin.IN)
+    print(f"PIR sensor enabled on GPIO {PIR_SENSOR_PIN}")
+
+# Photo transistor light sensor setup (if enabled)
+light_sensor = None
+if LIGHT_ENABLED:
+    from machine import ADC
+    light_sensor = ADC(Pin(LIGHT_SENSOR_PIN))
+    print(f"Light sensor enabled on GPIO {LIGHT_SENSOR_PIN} (ADC)")
+
+# Motion detection state
+motion_detected = False
+last_motion_time = 0
+motion_state_sent = False
+
+# Light sensor state
+light_level_percent = 0
+last_light_reading = 0
+last_light_state = "unknown"  # "dark", "normal", "bright"
 
 class SHT30:
     """SHT-30 Temperature and Humidity Sensor Driver"""
@@ -146,6 +171,123 @@ def publish_sensor_data(client, temperature, humidity):
         print(f"Failed to publish data: {e}")
         return False
 
+def publish_motion_event(client, motion_detected, motion_start_time=None):
+    """Publish motion detection event to MQTT topic"""
+    try:
+        timestamp = time.time()
+        
+        motion_payload = ujson.dumps({
+            "motion": motion_detected,
+            "room": ROOM_NUMBER,
+            "sensor": "PIR",
+            "timestamp": timestamp,
+            "motion_start": motion_start_time if motion_start_time else timestamp,
+            "device_id": DEVICE_NAME
+        })
+        
+        # Publish motion event
+        client.publish(MOTION_TOPIC, motion_payload)
+        if ENABLE_DETAILED_LOGGING:
+            status = "DETECTED" if motion_detected else "CLEARED"
+            print(f"Published motion {status} to {MOTION_TOPIC}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"Failed to publish motion data: {e}")
+        return False
+
+def check_motion_sensor():
+    """Check PIR sensor and return motion state"""
+    global motion_detected, last_motion_time, motion_state_sent
+    
+    if not PIR_ENABLED or not pir_sensor:
+        return False
+    
+    current_time = time.time()
+    pir_reading = pir_sensor.value()
+    
+    # Motion detected
+    if pir_reading == 1:
+        if not motion_detected:
+            # New motion detected
+            motion_detected = True
+            last_motion_time = current_time
+            motion_state_sent = False
+            if ENABLE_DETAILED_LOGGING:
+                print(f"Motion detected in room {ROOM_NUMBER}")
+        else:
+            # Motion still ongoing, update last seen time
+            last_motion_time = current_time
+        return True
+    
+    # No motion currently detected
+    else:
+        if motion_detected:
+            # Check if motion timeout has elapsed
+            if current_time - last_motion_time >= PIR_TIMEOUT:
+                motion_detected = False
+                motion_state_sent = False
+                if ENABLE_DETAILED_LOGGING:
+                    print(f"Motion cleared in room {ROOM_NUMBER}")
+                return False
+        return motion_detected  # Still in timeout period
+
+def read_light_sensor():
+    """Read photo transistor and return light level percentage"""
+    if not LIGHT_ENABLED or not light_sensor:
+        return None
+    
+    try:
+        # Read ADC value (0-65535 on Pico)
+        adc_value = light_sensor.read_u16()
+        
+        # Convert to percentage (0-100%)
+        # Higher ADC value = more light (assuming photo transistor pulls voltage high with light)
+        light_percentage = (adc_value / 65535.0) * 100.0
+        
+        return light_percentage
+        
+    except Exception as e:
+        print(f"Error reading light sensor: {e}")
+        return None
+
+def publish_light_data(client, light_level, light_state):
+    """Publish light level data to MQTT topic"""
+    try:
+        timestamp = time.time()
+        
+        light_payload = ujson.dumps({
+            "light_level": round(light_level, 1),
+            "light_percent": round(light_level, 1),
+            "light_state": light_state,  # "dark", "normal", "bright"
+            "unit": "%",
+            "room": ROOM_NUMBER,
+            "sensor": "PhotoTransistor",
+            "timestamp": timestamp,
+            "device_id": DEVICE_NAME
+        })
+        
+        # Publish light data
+        client.publish(LIGHT_TOPIC, light_payload)
+        if ENABLE_DETAILED_LOGGING:
+            print(f"Published light: {light_level:.1f}% ({light_state}) to {LIGHT_TOPIC}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"Failed to publish light data: {e}")
+        return False
+
+def determine_light_state(light_percent):
+    """Determine light state based on percentage thresholds"""
+    if light_percent < LIGHT_THRESHOLD_LOW:
+        return "dark"
+    elif light_percent > LIGHT_THRESHOLD_HIGH:
+        return "bright"
+    else:
+        return "normal"
+
 def blink_led(times=1, delay=0.1):
     """Blink LED for status indication"""
     for _ in range(times):
@@ -160,6 +302,10 @@ def main():
     print(f"Room Number: {ROOM_NUMBER}")
     print(f"Temperature Topic: {TEMP_TOPIC}")
     print(f"Humidity Topic: {HUM_TOPIC}")
+    if PIR_ENABLED:
+        print(f"Motion Topic: {MOTION_TOPIC}")
+    if LIGHT_ENABLED:
+        print(f"Light Topic: {LIGHT_TOPIC}")
     
     # Initialize I2C
     try:
@@ -194,28 +340,73 @@ def main():
         return
     
     print(f"Starting sensor readings every {READING_INTERVAL} seconds...")
+    if PIR_ENABLED:
+        print(f"PIR motion detection enabled for room {ROOM_NUMBER}")
+    if LIGHT_ENABLED:
+        print(f"Light sensor enabled for room {ROOM_NUMBER} (thresholds: dark<{LIGHT_THRESHOLD_LOW}%, bright>{LIGHT_THRESHOLD_HIGH}%)")
     print("Press Ctrl+C to stop")
     
     # Main sensor loop
     error_count = 0
+    last_sensor_reading = 0
     
     while True:
         try:
-            # Read sensor data using the new driver
-            temperature, humidity = sensor.read_temperature_humidity()
+            current_time = time.time()
             
-            if ENABLE_DETAILED_LOGGING:
-                print(f"Room {ROOM_NUMBER} - Temp: {temperature:.2f}°C, Humidity: {humidity:.2f}%")
-            else:
-                print(f"T:{temperature:.1f}°C H:{humidity:.1f}%")
+            # Check motion sensor (check every loop iteration)
+            if PIR_ENABLED:
+                motion_state = check_motion_sensor()
+                
+                # Send motion state change if needed
+                if motion_state != motion_state_sent:
+                    if publish_motion_event(mqtt_client, motion_state, last_motion_time):
+                        motion_state_sent = motion_state
+                        if motion_state:
+                            blink_led(2, 0.05)  # Quick double blink for motion
             
-            # Publish to MQTT
-            if publish_sensor_data(mqtt_client, temperature, humidity):
-                blink_led(1, 0.1)  # Short blink for success
-                error_count = 0  # Reset error count on success
-            else:
-                error_count += 1
-                blink_led(3, 0.1)  # Triple blink for MQTT error
+            # Read temperature/humidity sensors at configured interval
+            if current_time - last_sensor_reading >= READING_INTERVAL:
+                temperature, humidity = sensor.read_temperature_humidity()
+                
+                # Read light sensor data
+                light_level = None
+                current_light_state = "unknown"
+                if LIGHT_ENABLED:
+                    light_level = read_light_sensor()
+                    if light_level is not None:
+                        current_light_state = determine_light_state(light_level)
+                        
+                        # Update global state
+                        global light_level_percent, last_light_state
+                        light_level_percent = light_level
+                        
+                        # Publish light data if state changed or it's been a while
+                        if (current_light_state != last_light_state or 
+                            current_time - last_light_reading >= LIGHT_READING_INTERVAL):
+                            if publish_light_data(mqtt_client, light_level, current_light_state):
+                                last_light_state = current_light_state
+                                global last_light_reading
+                                last_light_reading = current_time
+                
+                if ENABLE_DETAILED_LOGGING:
+                    motion_status = " [MOTION]" if (PIR_ENABLED and motion_detected) else ""
+                    light_status = f" [LIGHT:{current_light_state.upper()}:{light_level:.1f}%]" if LIGHT_ENABLED and light_level is not None else ""
+                    print(f"Room {ROOM_NUMBER} - Temp: {temperature:.2f}°F, Humidity: {humidity:.2f}%{motion_status}{light_status}")
+                else:
+                    motion_indicator = "M" if (PIR_ENABLED and motion_detected) else " "
+                    light_indicator = f"L:{light_level:.0f}%" if LIGHT_ENABLED and light_level is not None else ""
+                    print(f"T:{temperature:.1f}°F H:{humidity:.1f}% {motion_indicator} {light_indicator}")
+                
+                # Publish temperature/humidity to MQTT
+                if publish_sensor_data(mqtt_client, temperature, humidity):
+                    blink_led(1, 0.1)  # Short blink for success
+                    error_count = 0  # Reset error count on success
+                else:
+                    error_count += 1
+                    blink_led(3, 0.1)  # Triple blink for MQTT error
+                
+                last_sensor_reading = current_time
             
             # Check for too many consecutive errors
             if error_count >= MAX_CONSECUTIVE_ERRORS:
@@ -225,7 +416,22 @@ def main():
             # Garbage collection
             gc.collect()
             
-            # Wait for next reading
+            # Short sleep to prevent busy waiting
+            time.sleep(0.1)
+            
+        except KeyboardInterrupt:
+            print("\nStopping sensor readings...")
+            break
+        except Exception as e:
+            print(f"Sensor reading error: {e}")
+            error_count += 1
+            blink_led(5, 0.1)  # Five blinks for sensor error
+            
+            # Check for too many consecutive errors
+            if error_count >= MAX_CONSECUTIVE_ERRORS:
+                print(f"Too many consecutive errors ({error_count}), restarting...")
+                machine.reset()
+                
             time.sleep(READING_INTERVAL)
             
         except KeyboardInterrupt:

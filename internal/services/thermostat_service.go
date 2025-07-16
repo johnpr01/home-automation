@@ -144,7 +144,7 @@ func (ts *ThermostatService) subscribeSensorTopics() {
 	ts.mqttClient.Subscribe("room-temp/+", ts.handleTemperatureMessage)
 	ts.mqttClient.Subscribe("room-hum/+", ts.handleHumidityMessage)
 
-	ts.logger.Println("Subscribed to sensor MQTT topics")
+	ts.logger.Println("Subscribed to sensor MQTT topics: temp, humidity")
 }
 
 // handleTemperatureMessage processes temperature messages from Pi Pico sensors
