@@ -49,7 +49,10 @@ class SHT30:
             
             # Convert temperature (first 3 bytes)
             temp_raw = (data[0] << 8) | data[1]
-            temperature = -45 + (175 * temp_raw / 65535.0)
+            temperature_celsius = -45 + (175 * temp_raw / 65535.0)
+            
+            # Convert to Fahrenheit
+            temperature = (temperature_celsius * 9.0 / 5.0) + 32.0
             
             # Convert humidity (last 3 bytes)
             hum_raw = (data[3] << 8) | data[4]
@@ -111,7 +114,7 @@ def publish_sensor_data(client, temperature, humidity):
         
         temp_payload = ujson.dumps({
             "temperature": round(temperature, 2),
-            "unit": "°C",
+            "unit": "°F",
             "room": ROOM_NUMBER,
             "sensor": "SHT-30",
             "timestamp": timestamp,

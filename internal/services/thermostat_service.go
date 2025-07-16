@@ -10,6 +10,7 @@ import (
 
 	"github.com/johnpr01/home-automation/internal/models"
 	"github.com/johnpr01/home-automation/pkg/mqtt"
+	"github.com/johnpr01/home-automation/pkg/utils"
 )
 
 // ThermostatService manages smart thermostats and processes sensor data
@@ -42,18 +43,18 @@ func (ts *ThermostatService) RegisterThermostat(thermostat *models.Thermostat) {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
-	// Set default values
+	// Set default values in Fahrenheit
 	if thermostat.Hysteresis == 0 {
-		thermostat.Hysteresis = 0.5 // 0.5°C default hysteresis
+		thermostat.Hysteresis = utils.DefaultHysteresis // 1°F default hysteresis
 	}
 	if thermostat.MinTemp == 0 {
-		thermostat.MinTemp = 10.0 // 10°C minimum
+		thermostat.MinTemp = utils.DefaultMinTemp // 50°F minimum
 	}
 	if thermostat.MaxTemp == 0 {
-		thermostat.MaxTemp = 35.0 // 35°C maximum
+		thermostat.MaxTemp = utils.DefaultMaxTemp // 95°F maximum
 	}
 	if thermostat.TargetTemp == 0 {
-		thermostat.TargetTemp = 21.0 // 21°C default target
+		thermostat.TargetTemp = utils.DefaultTargetTemp // 70°F default target
 	}
 
 	ts.thermostats[thermostat.ID] = thermostat
@@ -178,15 +179,15 @@ func (ts *ThermostatService) handleTemperatureMessage(topic string, payload []by
 	for _, thermostat := range ts.thermostats {
 		if thermostat.RoomID == roomID {
 			oldTemp := thermostat.CurrentTemp
-			// Extract temperature value
-			if temp, ok := reading.Value.(float64); ok {
-				thermostat.CurrentTemp = temp + thermostat.TemperatureOffset
+			// Extract temperature value (now in Fahrenheit from Pi Pico)
+			if tempFahrenheit, ok := reading.Value.(float64); ok {
+				thermostat.CurrentTemp = tempFahrenheit + thermostat.TemperatureOffset
 				thermostat.LastSensorUpdate = time.Now()
 				thermostat.IsOnline = true
 				thermostat.UpdatedAt = time.Now()
 			}
 
-			ts.logger.Printf("Updated thermostat %s: %.1f°C -> %.1f°C",
+			ts.logger.Printf("Updated thermostat %s: %.1f°F -> %.1f°F",
 				thermostat.ID, oldTemp, thermostat.CurrentTemp)
 			break
 		}

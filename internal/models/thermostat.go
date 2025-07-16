@@ -26,22 +26,23 @@ const (
 )
 
 // Thermostat represents a smart thermostat device
+// All temperature values are stored and processed in Fahrenheit
 type Thermostat struct {
 	ID                string           `json:"id" db:"id"`
 	Name              string           `json:"name" db:"name"`
 	RoomID            string           `json:"room_id" db:"room_id"`
-	CurrentTemp       float64          `json:"current_temp" db:"current_temp"`
-	CurrentHumidity   float64          `json:"current_humidity" db:"current_humidity"`
-	TargetTemp        float64          `json:"target_temp" db:"target_temp"`
+	CurrentTemp       float64          `json:"current_temp" db:"current_temp"`         // Temperature in Fahrenheit
+	CurrentHumidity   float64          `json:"current_humidity" db:"current_humidity"` // Humidity percentage
+	TargetTemp        float64          `json:"target_temp" db:"target_temp"`           // Target temperature in Fahrenheit
 	Mode              ThermostatMode   `json:"mode" db:"mode"`
 	Status            ThermostatStatus `json:"status" db:"status"`
 	FanSpeed          int              `json:"fan_speed" db:"fan_speed"` // 0-100
 	HeatingEnabled    bool             `json:"heating_enabled" db:"heating_enabled"`
 	CoolingEnabled    bool             `json:"cooling_enabled" db:"cooling_enabled"`
-	TemperatureOffset float64          `json:"temperature_offset" db:"temperature_offset"`
-	Hysteresis        float64          `json:"hysteresis" db:"hysteresis"` // Temperature dead band
-	MinTemp           float64          `json:"min_temp" db:"min_temp"`
-	MaxTemp           float64          `json:"max_temp" db:"max_temp"`
+	TemperatureOffset float64          `json:"temperature_offset" db:"temperature_offset"` // Calibration offset in Fahrenheit
+	Hysteresis        float64          `json:"hysteresis" db:"hysteresis"`                 // Temperature dead band in Fahrenheit
+	MinTemp           float64          `json:"min_temp" db:"min_temp"`                     // Minimum temperature in Fahrenheit
+	MaxTemp           float64          `json:"max_temp" db:"max_temp"`                     // Maximum temperature in Fahrenheit
 	LastSensorUpdate  time.Time        `json:"last_sensor_update" db:"last_sensor_update"`
 	CreatedAt         time.Time        `json:"created_at" db:"created_at"`
 	UpdatedAt         time.Time        `json:"updated_at" db:"updated_at"`

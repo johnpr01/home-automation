@@ -44,8 +44,8 @@ The smart thermostat system consists of:
 **Payload Format (from Pi Pico):**
 ```json
 {
-  "temperature": 22.5,
-  "unit": "°C",
+  "temperature": 72.5,
+  "unit": "°F",
   "room": "1",
   "sensor": "SHT-30",
   "timestamp": 1640995200,
@@ -93,13 +93,13 @@ thermostat := &models.Thermostat{
     ID:                "thermostat-001",
     Name:              "Living Room Thermostat",
     RoomID:            "1", // Must match Pi Pico room number
-    TargetTemp:        22.0,
+    TargetTemp:        72.0, // Target temperature in Fahrenheit
     Mode:              models.ModeAuto,
     HeatingEnabled:    true,
     CoolingEnabled:    true,
-    Hysteresis:        1.0, // Prevents short cycling
-    MinTemp:           10.0,
-    MaxTemp:           30.0,
+    Hysteresis:        2.0, // 2°F prevents short cycling
+    MinTemp:           50.0, // 50°F minimum
+    MaxTemp:           90.0, // 90°F maximum
 }
 ```
 
@@ -121,9 +121,9 @@ The thermostat uses hysteresis control:
 
 ### Example Scenarios
 
-**Heating Mode (Target: 22°C, Hysteresis: 1°C)**
-- Heat turns ON when temperature drops below 21.5°C
-- Heat turns OFF when temperature reaches 22°C
+**Heating Mode (Target: 72°F, Hysteresis: 2°F)**
+- Heat turns ON when temperature drops below 71°F
+- Heat turns OFF when temperature reaches 72°F
 
 **Auto Mode**
 - Automatically switches between heating and cooling based on temperature
@@ -173,5 +173,5 @@ mosquitto_sub -h localhost -t "room-hum/+"
 mosquitto_sub -h localhost -t "room-control/+"
 
 # Test Pi Pico connection
-mosquitto_pub -h localhost -t "room-temp/1" -m '{"temperature":20.5,"unit":"°C","room":"1","sensor":"SHT-30","timestamp":1640995200,"device_id":"test"}'
+mosquitto_pub -h localhost -t "room-temp/1" -m '{"temperature":70.5,"unit":"°F","room":"1","sensor":"SHT-30","timestamp":1640995200,"device_id":"test"}'
 ```
