@@ -1,33 +1,43 @@
-# Home Automation Project
+# Home Automation System
 
-A comprehensive Go-based home    ├── motion/             # Motion detection service
-   │   └── main.go         # PIR sensor monitoring and occupancy tracking
-   ├── light/              # Light sensor service
-   │   └── main.go         # Photo transistor ambient light monitoring
-   ├── integrated/         # Optional integrated service
-   │   └── main.go         # Combined motion + light + thermostat with callbacksmation system with **Smart Thermostat Framework** optimized for **Raspberry Pi 5** deployment, featuring IoT sensor integration, MQTT communication, and intelligent temperature control using **Fahrenheit**.
+A comprehensive home automation system built in Go, designed to run on Raspberry Pi 5 with integrated sensor networks, MQTT messaging, and intelligent thermostat control.
 
-## 🌡️ Smart Thermostat System
+## 🏠 System Overview
 
-**NEW: Complete smart thermostat framework with Pi Pico WH sensors!**
+This system provides a unified platform for managing home automation devices with real-time environmental monitoring, motion detection, and intelligent climate control.
 
-- **Intelligent Temperature Control**: Automatic heating/cooling with hysteresis
-- **Pi Pico Integration**: SHT-30 temperature/humidity sensors via MQTT
-- **Fahrenheit Operation**: All temperatures in Fahrenheit for US users
+### Key Features
+
+- **Multi-Sensor Integration**: Temperature, humidity, motion, and light sensors on a single Pi Pico device
+- **Unified Sensor Service**: Centralized management of all sensor data with intelligent aggregation
+- **Smart Thermostat**: Fahrenheit-based climate control with occupancy awareness
+- **Real-time MQTT**: Low-latency sensor data transmission and device control
+- **Microcontroller Sensors**: Pi Pico WH with SHT-30, PIR, and photo transistor sensors
+- **Container Orchestration**: Docker Compose with optimized resource allocation
+- **Message Streaming**: Kafka integration for data persistence and analytics
+- **Motion Detection**: PIR sensor monitoring with room occupancy tracking
+- **Ambient Light Sensing**: Photo transistor monitoring with day/night cycle detection
+- **Pi Pico Integration**: SHT-30, PIR, and photo transistor sensors via MQTT
 - **Multi-Zone Support**: Control multiple rooms independently
-- **Real-time Processing**: 30-second control loops with instant sensor response
+- **Orthogonal Architecture**: Services operate independently but can integrate when needed
 
-### Quick Thermostat Setup
+### 🏗️ **Service Architecture:**
+- **Thermostat Service**: HVAC temperature control and automation
+- **Motion Service**: PIR sensor monitoring and occupancy detection
+- **Light Service**: Photo transistor ambient light tracking
+- **Integrated Service**: Optional combined service with cross-sensor automation
+
+### Quick Smart Home Setup
 
 1. **Deploy Pi Pico sensors:**
    ```bash
    cd firmware/pico-sht30
-   # Configure WiFi and MQTT settings
+   # Configure WiFi, MQTT, and sensor settings
    cp config_template.py config.py
-   # Flash to Pi Pico WH with SHT-30 sensor
+   # Flash to Pi Pico WH with SHT-30, PIR, and photo transistor
    ```
 
-2. **Start services (choose one option):**
+2. **Start services (choose deployment option):**
    ```bash
    # Option A: Thermostat service only
    cd cmd/thermostat && go run main.go
@@ -42,10 +52,11 @@ A comprehensive Go-based home    ├── motion/             # Motion detectio
    cd cmd/integrated && go run main.go
    ```
 
-3. **Monitor temperature control:**
-   - Listens to: `room-temp/{room_id}`, `room-hum/{room_id}`, and `room-motion/{room_id}`
-   - Controls: Automatic heating/cooling based on target temperature
-   - Default: 70°F target with 1°F hysteresis
+3. **Monitor smart home control:**
+   - **Temperature**: `room-temp/{room_id}` → Automatic HVAC control
+   - **Motion**: `room-motion/{room_id}` → Occupancy tracking
+   - **Light**: `room-light/{room_id}` → Ambient light monitoring
+   - **Integration**: Cross-sensor automation and energy optimization
 
 ## 🏗️ Project Structure
 
@@ -80,11 +91,12 @@ home-automation/
 │   ├── models/            # Data models
 │   │   ├── device.go
 │   │   ├── sensor.go
-│   │   └── thermostat.go  # Smart thermostat models (Fahrenheit)   │   └── services/          # Business logic
-   │       ├── device_service.go
-   │       ├── thermostat_service.go # Thermostat control logic (HVAC focused)
-   │       ├── motion_service.go     # Motion detection and room occupancy
-   │       └── light_service.go      # Light sensor monitoring and ambient light tracking
+│   │   └── thermostat.go  # Smart thermostat models (Fahrenheit)
+│   └── services/          # Business logic
+│       ├── device_service.go
+│       ├── thermostat_service.go # Thermostat control logic (HVAC focused)
+│       ├── motion_service.go     # Motion detection and room occupancy
+│       └── light_service.go      # Light sensor monitoring and ambient light tracking
 │
 ├── pkg/                    # Public library code
 │   ├── devices/           # Device implementations
@@ -120,18 +132,22 @@ home-automation/
 ├── docs/                  # Documentation
 │   ├── README.md         # Documentation index
 │   ├── THERMOSTAT.md     # Smart thermostat guide
+│   ├── MOTION_DETECTION.md # PIR motion sensor guide
+│   ├── LIGHT_SENSOR.md   # Photo transistor light sensor guide
 │   └── FAHRENHEIT_CONVERSION.md # Fahrenheit conversion details
 │
 ├── test/                  # Test files
 │   └── device_test.go    # Example tests
 │
 ├── firmware/             # IoT device firmware
-│   └── pico-sht30/      # Pi Pico WH SHT-30 sensor firmware
-│       ├── main.py      # MicroPython main application (Fahrenheit)
+│   └── pico-sht30/      # Pi Pico WH multi-sensor firmware
+│       ├── main.py      # MicroPython application (temp/humidity/motion/light)
 │       ├── sht30.py     # SHT-30 sensor driver
-│       ├── config_template.py # Configuration template
+│       ├── config_template.py # Multi-sensor configuration template
 │       ├── deploy.sh    # Firmware deployment script
-│       └── README.md    # Firmware documentation
+│       ├── README.md    # Firmware documentation
+│       ├── MOTION_SENSOR.md # PIR sensor setup guide
+│       └── LIGHT_SENSOR.md  # Photo transistor setup guide
 │
 ├── deployments/          # Raspberry Pi 5 deployment
 │   ├── docker-compose.yml # Optimized for Pi 5
@@ -241,40 +257,47 @@ The system runs the following services optimized for Raspberry Pi 5:
 - **Safety Limits**: Configurable min/max temperature protection
 - **Calibration**: Temperature offset support for sensor accuracy
 
-### Pi Pico Integration
-Deploy SHT-30 temperature/humidity sensors with PIR motion detection throughout your home:
+### Multi-Sensor Integration
+Deploy comprehensive environmental monitoring throughout your home:
 
-1. **Configure sensor:**
+1. **Configure sensors:**
    ```bash
    cd firmware/pico-sht30
    cp config_template.py config.py
-   # Edit with your Pi 5 IP, room assignment, and enable PIR sensor
+   # Edit with your Pi 5 IP, room assignment
+   # Enable SHT-30 (temp/humidity), PIR (motion), and photo transistor (light)
    ```
 
 2. **Flash firmware:**
    ```bash
    # Copy files to Pi Pico WH
-   # Sensor automatically sends Fahrenheit temperatures and motion events
+   # Sensors automatically send environmental data via MQTT
    ```
 
-3. **Monitor thermostat:**
+3. **Monitor services:**
    ```bash
-   # Thermostat service logs show real-time control decisions and motion detection
-   cd cmd/thermostat && go run main.go
+   # Individual services
+   cd cmd/thermostat && go run main.go  # HVAC control
+   cd cmd/motion && go run main.go      # Occupancy tracking
+   cd cmd/light && go run main.go       # Ambient light monitoring
+   
+   # Or integrated service
+   cd cmd/integrated && go run main.go  # All sensors with automation
    ```
 
-### MQTT Topics (Fahrenheit):
-- **Temperature**: `room-temp/{room_number}` (°F)
-- **Humidity**: `room-hum/{room_number}` (%)
-- **Motion**: `room-motion/{room_number}` (boolean)
-- **Control**: `room-control/{room_number}` (heating/cooling commands)
+### MQTT Topics (All Environmental Data):
+- **Temperature**: `room-temp/{room_number}` (°F) → Thermostat control
+- **Humidity**: `room-hum/{room_number}` (%) → Environmental monitoring
+- **Motion**: `room-motion/{room_number}` (occupancy) → Presence detection
+- **Light**: `room-light/{room_number}` (%) → Ambient light levels
+- **Control**: `thermostat/{thermostat_id}/control` (HVAC commands)
 
-### Example Operation:
-**Target: 70°F, Hysteresis: 1°F**
-- 🔥 Heat ON: Temperature drops below 69.5°F
-- 🔥 Heat OFF: Temperature reaches 70°F
-- ❄️ Cool ON: Temperature rises above 70.5°F  
-- ❄️ Cool OFF: Temperature reaches 70°F
+### Example Multi-Sensor Operation:
+**Smart Home Intelligence**
+- 🌡️ **HVAC**: Target 70°F ±1°F hysteresis with automatic heating/cooling
+- 👥 **Occupancy**: Motion detection for energy-saving and security
+- 🌞 **Lighting**: Ambient light monitoring for automatic lighting control
+- 🏠 **Integration**: Cross-sensor automation (e.g., occupied + dark = lights on)
 
 ## 🔧 Management & Monitoring
 
@@ -373,17 +396,30 @@ The system implements a comprehensive logging approach optimized for Raspberry P
 
 ## 🏠 Features
 
-### Smart Thermostat System
-- **Intelligent Temperature Control**: Automatic heating/cooling with hysteresis (Fahrenheit)
-- **Multi-Zone Support**: Independent control for multiple rooms
-- **Pi Pico Integration**: SHT-30 sensors with real-time MQTT communication
-- **Advanced Control Logic**: Prevents short cycling, maintains comfort
-- **Safety Features**: Min/max temperature limits, sensor validation
-- **Energy Optimization**: Efficient heating/cooling cycles
+## 🏠 Comprehensive Smart Home Features
 
-### Core Components
+### Multi-Sensor Environmental Control
+- **Intelligent Temperature Control**: Automatic heating/cooling with hysteresis (Fahrenheit)
+- **Motion Detection**: PIR sensor monitoring with occupancy tracking
+- **Ambient Light Sensing**: Photo transistor monitoring with day/night detection
+- **Multi-Zone Support**: Independent control for multiple rooms
+- **Cross-Sensor Integration**: Occupancy + light level automation
+
+### Pi Pico Multi-Sensor Platform
+- **SHT-30 Integration**: Temperature/humidity sensors with real-time MQTT
+- **PIR Motion Sensors**: Room occupancy detection and security monitoring
+- **Photo Transistor Light Sensors**: Ambient light levels and circadian rhythm tracking
+- **WiFi Connectivity**: Direct MQTT communication with Raspberry Pi 5
+- **Multi-Room Deployment**: Scalable sensor network across your home
+
+### Orthogonal Service Architecture
+- **Thermostat Service**: HVAC control and temperature automation
+- **Motion Service**: Occupancy tracking and presence detection
+- **Light Service**: Ambient light monitoring and day/night cycles
+- **Integrated Service**: Optional cross-sensor automation and energy optimization
+
+### Core Infrastructure
 - **Device Management**: Control lights, switches, climate systems
-- **IoT Sensor Network**: Pi Pico WH sensors with SHT-30 temperature/humidity
 - **MQTT Integration**: Standard IoT communication protocol  
 - **Kafka Logging**: Real-time log streaming optimized for Pi 5
 - **REST API**: Complete HTTP API for integrations
@@ -392,12 +428,19 @@ The system implements a comprehensive logging approach optimized for Raspberry P
 
 ### Device Types Supported
 - **Smart Thermostats**: Automatic temperature control (Fahrenheit)
-- **Motion Sensors**: PIR motion detection with MQTT alerts
-- **Lights**: On/off, dimming, color control
+- **Motion Sensors**: PIR motion detection with MQTT alerts and occupancy tracking
+- **Light Sensors**: Photo transistor ambient light monitoring
+- **Smart Lights**: On/off, dimming, color control with automatic control
 - **Switches**: Simple on/off control  
-- **Climate**: Temperature and mode control
-- **IoT Sensors**: Pi Pico WH with SHT-30 (temperature/humidity in °F) + PIR motion
-- **Environmental**: Various sensor types with real-time readings
+- **Climate Systems**: Temperature and mode control with energy optimization
+- **IoT Sensors**: Pi Pico WH with SHT-30 + PIR + photo transistor multi-sensor nodes
+
+### Advanced Automation Features
+- **Energy Optimization**: Reduce HVAC when rooms unoccupied or naturally lit
+- **Circadian Rhythm Support**: Light-based automation for health and wellness
+- **Security Integration**: Motion alerts and unusual activity detection
+- **Adaptive Scheduling**: Learn occupancy patterns for proactive climate control
+- **Cross-Sensor Logic**: Complex automation rules using multiple sensor inputs
 
 ### Raspberry Pi 5 Architecture  
 - **Optimized Performance**: Resource limits and efficient memory usage
@@ -408,15 +451,23 @@ The system implements a comprehensive logging approach optimized for Raspberry P
 
 ## 🔧 Configuration
 
-### Smart Thermostat Configuration
-The thermostat service uses Fahrenheit by default. Key settings:
+### Multi-Sensor Configuration
+The services use Fahrenheit and optimized settings by default:
 
 ```go
-// Default Fahrenheit values
+// Thermostat defaults (Fahrenheit)
 DefaultTargetTemp    = 70.0°F  // Comfortable room temperature
 DefaultHysteresis    = 1.0°F   // Prevents short cycling  
 DefaultMinTemp       = 50.0°F  // Safety minimum
 DefaultMaxTemp       = 95.0°F  // Safety maximum
+
+// Motion sensor defaults
+PIR_DEBOUNCE_TIME    = 2 sec   // Prevent rapid triggering
+PIR_TIMEOUT          = 30 sec  // Motion clear delay
+
+// Light sensor defaults  
+LIGHT_THRESHOLD_LOW  = 10%     // Below = dark
+LIGHT_THRESHOLD_HIGH = 80%     // Above = bright
 ```
 
 ### Main Configuration
@@ -427,11 +478,13 @@ Edit `configs/config.yaml` or `.env` to customize:
 - Kafka logging configuration
 - Raspberry Pi specific optimizations
 
-### IoT Sensor Configuration
+### Pi Pico Multi-Sensor Configuration
 Edit `firmware/pico-sht30/config.py`:
 - WiFi credentials
 - Raspberry Pi 5 MQTT broker IP
 - Room assignment and device naming
+- Sensor enable/disable flags (PIR, light sensor)
+- Sensor thresholds and timing
 - Temperature unit (Fahrenheit by default)
 - Reading intervals and GPIO pins
 - Logging configuration

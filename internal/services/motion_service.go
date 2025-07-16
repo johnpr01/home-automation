@@ -102,14 +102,26 @@ func (ms *MotionService) subscribeMotionTopics() {
 	ms.logger.Println("MotionService: Subscribed to room-motion/+ topics")
 }
 
-// handleMotionMessage processes motion detection messages from Pi Pico sensors
-func (ms *MotionService) handleMotionMessage(topic string, payload []byte) error {
+// extractRoomID extracts the room ID from an MQTT topic
+func (ms *MotionService) extractRoomID(topic string) (string, error) {
 	// Extract room number from topic (room-motion/1)
 	parts := strings.Split(topic, "/")
 	if len(parts) != 2 {
-		return fmt.Errorf("invalid motion topic format: %s", topic)
+		return "", fmt.Errorf("invalid motion topic format: %s", topic)
 	}
 	roomID := parts[1]
+	if roomID == "" {
+		return "", fmt.Errorf("empty room ID in topic: %s", topic)
+	}
+	return roomID, nil
+}
+
+// handleMotionMessage processes motion detection messages from Pi Pico sensors
+func (ms *MotionService) handleMotionMessage(topic string, payload []byte) error {
+	roomID, err := ms.extractRoomID(topic)
+	if err != nil {
+		return err
+	}
 
 	// Parse motion message
 	var motionMsg MotionDetectionMessage

@@ -38,6 +38,51 @@ func NewThermostatService(mqttClient *mqtt.Client, logger *log.Logger) *Thermost
 	return service
 }
 
+// HandleTemperatureUpdate handles temperature updates from unified sensor service
+func (ts *ThermostatService) HandleTemperatureUpdate(roomID string, temperature float64) {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+
+	// Get or create thermostat for this room
+	thermostat, exists := ts.thermostats[roomID]
+	if !exists {
+		// Create default thermostat for this room
+		thermostat = &models.Thermostat{
+			ID:               roomID,
+			Name:             "Thermostat-" + roomID,
+			RoomID:           roomID,
+			CurrentTemp:      temperature,
+			TargetTemp:       72.0, // Default 72°F
+			Mode:             models.ModeAuto,
+			Status:           models.StatusIdle,
+			Hysteresis:       1.0,
+			MinTemp:          60.0,
+			MaxTemp:          85.0,
+			HeatingEnabled:   true,
+			CoolingEnabled:   true,
+			LastSensorUpdate: time.Now(),
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+			IsOnline:         true,
+		}
+		ts.thermostats[roomID] = thermostat
+		ts.logger.Printf("Created new thermostat for room %s", roomID)
+	}
+
+	// Update current temperature
+	oldTemp := thermostat.CurrentTemp
+	thermostat.CurrentTemp = temperature
+	thermostat.LastSensorUpdate = time.Now()
+	thermostat.UpdatedAt = time.Now()
+	thermostat.IsOnline = true
+
+	ts.logger.Printf("Thermostat %s temperature update: %.1f°F -> %.1f°F",
+		roomID, oldTemp, temperature)
+
+	// Trigger control logic evaluation
+	go ts.processThermostat(thermostat)
+}
+
 // RegisterThermostat registers a new thermostat
 func (ts *ThermostatService) RegisterThermostat(thermostat *models.Thermostat) {
 	ts.mu.Lock()
