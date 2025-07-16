@@ -1,0 +1,17 @@
+# Example Password File for Mosquitto
+# Generate with: mosquitto_passwd -c passwd username
+
+# To create this file with users:
+# mosquitto_passwd -c /path/to/passwd admin
+# mosquitto_passwd /path/to/passwd home-automation-server
+# mosquitto_passwd /path/to/passwd webclient
+
+# Example entries (these are hashed passwords):
+# admin:$6$salt$hashedpassword
+# home-automation-server:$6$salt$hashedpassword  
+# webclient:$6$salt$hashedpassword
+
+# To use this file:
+# 1. Uncomment 'password_file /mosquitto/config/passwd' in mosquitto.conf
+# 2. Set 'allow_anonymous false' in mosquitto.conf
+# 3. Generate real passwords using mosquitto_passwd command
