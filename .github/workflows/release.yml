@@ -1,0 +1,234 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  test:
+    name: Test Before Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+        
+    - name: Run comprehensive tests
+      run: |
+        go test -v -race -coverprofile=coverage.out ./...
+        
+    - name: Verify coverage threshold
+      run: |
+        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+        echo "Total coverage: ${COVERAGE}%"
+        if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+          echo "Coverage ${COVERAGE}% is below 80% threshold"
+          exit 1
+        fi
+
+  build-binaries:
+    name: Build Release Binaries
+    runs-on: ubuntu-latest
+    needs: test
+    
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+          - os: linux
+            arch: arm
+            arm: 7
+          - os: darwin
+            arch: amd64
+          - os: darwin
+            arch: arm64
+          - os: windows
+            arch: amd64
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+        
+    - name: Build binaries
+      env:
+        GOOS: ${{ matrix.os }}
+        GOARCH: ${{ matrix.arch }}
+        GOARM: ${{ matrix.arm }}
+      run: |
+        # Create release directory
+        mkdir -p release/${{ matrix.os }}-${{ matrix.arch }}
+        
+        # Build all main applications
+        echo "Building thermostat service..."
+        go build -ldflags="-s -w" -o release/${{ matrix.os }}-${{ matrix.arch }}/thermostat${{ matrix.os == 'windows' && '.exe' || '' }} ./cmd/thermostat
+        
+        echo "Building motion service..."
+        go build -ldflags="-s -w" -o release/${{ matrix.os }}-${{ matrix.arch }}/motion${{ matrix.os == 'windows' && '.exe' || '' }} ./cmd/motion
+        
+        echo "Building light service..."
+        go build -ldflags="-s -w" -o release/${{ matrix.os }}-${{ matrix.arch }}/light${{ matrix.os == 'windows' && '.exe' || '' }} ./cmd/light
+        
+        echo "Building integrated service..."
+        go build -ldflags="-s -w" -o release/${{ matrix.os }}-${{ matrix.arch }}/integrated${{ matrix.os == 'windows' && '.exe' || '' }} ./cmd/integrated
+        
+        echo "Building server..."
+        go build -ldflags="-s -w" -o release/${{ matrix.os }}-${{ matrix.arch }}/server${{ matrix.os == 'windows' && '.exe' || '' }} ./cmd/server
+        
+        echo "Building CLI..."
+        go build -ldflags="-s -w" -o release/${{ matrix.os }}-${{ matrix.arch }}/cli${{ matrix.os == 'windows' && '.exe' || '' }} ./cmd/cli
+        
+    - name: Create archive
+      run: |
+        cd release
+        if [ "${{ matrix.os }}" = "windows" ]; then
+          zip -r home-automation-${{ matrix.os }}-${{ matrix.arch }}.zip ${{ matrix.os }}-${{ matrix.arch }}/
+        else
+          tar -czf home-automation-${{ matrix.os }}-${{ matrix.arch }}.tar.gz ${{ matrix.os }}-${{ matrix.arch }}/
+        fi
+        
+    - name: Upload release artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: home-automation-${{ matrix.os }}-${{ matrix.arch }}
+        path: release/home-automation-*
+        retention-days: 7
+
+  build-docker:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=sha
+          
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64,linux/arm/v7
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-binaries, build-docker]
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+        
+    - name: Prepare release assets
+      run: |
+        mkdir -p release-assets
+        find artifacts -name "*.tar.gz" -o -name "*.zip" | xargs -I {} cp {} release-assets/
+        
+    - name: Generate changelog
+      run: |
+        echo "## Changes in this Release" > CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### Home Automation System v${GITHUB_REF#refs/tags/}" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "#### 🚀 Features" >> CHANGELOG.md
+        echo "- Smart thermostat with Fahrenheit temperature control" >> CHANGELOG.md
+        echo "- PIR motion sensor integration with occupancy tracking" >> CHANGELOG.md
+        echo "- Photo transistor ambient light monitoring" >> CHANGELOG.md
+        echo "- Multi-sensor Pi Pico WH integration (SHT-30 + PIR + Light)" >> CHANGELOG.md
+        echo "- Orthogonal service architecture with MQTT communication" >> CHANGELOG.md
+        echo "- Raspberry Pi 5 optimized deployment" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "#### 🏗️ Technical" >> CHANGELOG.md
+        echo "- Go $$(go version | cut -d' ' -f3) compatibility" >> CHANGELOG.md
+        echo "- Docker multi-architecture images (amd64, arm64, arm/v7)" >> CHANGELOG.md
+        echo "- Comprehensive unit test coverage (>80%)" >> CHANGELOG.md
+        echo "- MQTT + Kafka integration for real-time sensor data" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "#### 📦 Binaries" >> CHANGELOG.md
+        echo "- Available for Linux (amd64, arm64, arm/v7), macOS, and Windows" >> CHANGELOG.md
+        echo "- Docker images: \`ghcr.io/${{ github.repository }}:${GITHUB_REF#refs/tags/}\`" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "#### 🏠 Quick Start" >> CHANGELOG.md
+        echo "1. Download the appropriate binary for your platform" >> CHANGELOG.md
+        echo "2. Deploy using \`docker compose up -d\` on Raspberry Pi 5" >> CHANGELOG.md
+        echo "3. Configure Pi Pico sensors with \`firmware/pico-sht30/config.py\`" >> CHANGELOG.md
+        echo "4. Access the dashboard at \`http://YOUR_PI_IP:8080\`" >> CHANGELOG.md
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release-assets/*
+        body_path: CHANGELOG.md
+        draft: false
+        prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-deployment:
+    name: Notify Successful Release
+    runs-on: ubuntu-latest
+    needs: create-release
+    
+    steps:
+    - name: Summary
+      run: |
+        echo "🎉 Home Automation System Release Complete!"
+        echo ""
+        echo "📦 **Binaries**: Available for multiple platforms"
+        echo "🐳 **Docker**: Multi-architecture images pushed"
+        echo "📋 **Release**: GitHub release created with changelog"
+        echo ""
+        echo "🏠 **Ready for deployment on Raspberry Pi 5!**"

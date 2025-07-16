@@ -1,0 +1,123 @@
+name: Dependencies & Security
+
+on:
+  schedule:
+    # Run weekly on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v3
+      with:
+        fail-on-severity: moderate
+        allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC
+
+  govulncheck:
+    name: Go Vulnerability Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+        
+    - name: Install govulncheck
+      run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      
+    - name: Run govulncheck
+      run: govulncheck ./...
+
+  update-dependencies:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+        
+    - name: Update Go dependencies
+      run: |
+        go get -u all
+        go mod tidy
+        go mod verify
+        
+    - name: Run tests with updated dependencies
+      run: go test ./...
+      
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: update Go dependencies'
+        title: 'chore: update Go dependencies'
+        body: |
+          ## Automated Dependency Update
+          
+          This PR updates Go dependencies to their latest versions.
+          
+          ### Changes
+          - Updated all Go modules to latest versions
+          - Verified compatibility with existing tests
+          
+          ### Testing
+          - [x] All unit tests pass
+          - [x] Dependencies verified with `go mod verify`
+          
+          **Note**: This is an automated PR created by the dependency update workflow.
+        branch: chore/update-dependencies
+        delete-branch: true
+
+  codeql-analysis:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'go' ]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+        queries: security-and-quality
+        
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+        
+    - name: Build for CodeQL
+      run: |
+        go build ./cmd/...
+        
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:${{ matrix.language }}"
