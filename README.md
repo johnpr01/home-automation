@@ -26,6 +26,15 @@ This system provides a unified platform for managing home automation devices wit
 - **Motion Service**: PIR sensor monitoring and occupancy detection
 - **Light Service**: Photo transistor ambient light tracking
 - **Integrated Service**: Optional combined service with cross-sensor automation
+- **Automation Service**: Motion-activated lighting and smart home rules
+
+### 🤖 **Smart Automation Features:**
+- **Motion-Activated Lighting**: Automatically turn on lights when motion is detected in dark rooms
+- **Intelligent Light Control**: Only activates lights when ambient light is below threshold (20%)
+- **Cooldown Protection**: Prevents rapid on/off cycles with 5-minute cooldown periods
+- **Cross-Sensor Integration**: Coordinates between motion sensors, light sensors, and device control
+- **Rule-Based Automation**: Configurable automation rules for different rooms and scenarios
+- **MQTT Event Publishing**: Publishes automation events to `automation/{room_id}` topics
 
 ### Quick Smart Home Setup
 
@@ -48,14 +57,30 @@ This system provides a unified platform for managing home automation devices wit
    # Option C: Light sensor service only
    cd cmd/light && go run main.go
    
-   # Option D: All services with integration
+   # Option D: All services with motion-activated lighting automation
    cd cmd/integrated && go run main.go
+   
+   # Option E: Demo motion-activated lighting
+   cd cmd/automation-demo && go run main.go
+   ```
+
+3. **Test Motion-Activated Lighting:**
+   ```bash
+   # Simulate dark room conditions
+   mosquitto_pub -h localhost -t 'room-light/living-room' -m '{"light_level":5.0,"light_percent":5.0,"light_state":"dark","room":"living-room","timestamp":1642118400,"device_id":"pico-living"}'
+   
+   # Simulate motion detection (should trigger lights ON)
+   mosquitto_pub -h localhost -t 'room-motion/living-room' -m '{"motion":true,"room":"living-room","timestamp":1642118410,"device_id":"pico-living"}'
+   
+   # Check automation events
+   mosquitto_sub -h localhost -t 'automation/living-room'
    ```
 
 3. **Monitor smart home control:**
    - **Temperature**: `room-temp/{room_id}` → Automatic HVAC control
-   - **Motion**: `room-motion/{room_id}` → Occupancy tracking
-   - **Light**: `room-light/{room_id}` → Ambient light monitoring
+   - **Motion**: `room-motion/{room_id}` → Occupancy tracking + light automation
+   - **Light**: `room-light/{room_id}` → Ambient light monitoring + automation triggers
+   - **Automation**: `automation/{room_id}` → Motion-activated lighting events
    - **Integration**: Cross-sensor automation and energy optimization
 
 ## 🏗️ Project Structure
@@ -76,8 +101,12 @@ home-automation/
 │   │   └── main.go         # Thermostat control with MQTT  
 │   ├── motion/             # Motion detection service
 │   │   └── main.go         # PIR sensor monitoring and occupancy tracking
-│   ├── integrated/         # Optional integrated service
-│   │   └── main.go         # Combined motion + thermostat with callbacks
+│   ├── light/              # Light sensor service
+│   │   └── main.go         # Photo transistor ambient light monitoring
+│   ├── integrated/         # Integrated service with motion-activated lighting
+│   │   └── main.go         # Combined services with automation rules
+│   ├── automation-demo/    # Motion-activated lighting demo
+│   │   └── main.go         # Demo and testing for automation features
 │   ├── temp-demo/          # Temperature conversion demo
 │   │   └── main.go
 │   └── cli/                # Command-line interface
@@ -96,7 +125,8 @@ home-automation/
 │       ├── device_service.go
 │       ├── thermostat_service.go # Thermostat control logic (HVAC focused)
 │       ├── motion_service.go     # Motion detection and room occupancy
-│       └── light_service.go      # Light sensor monitoring and ambient light tracking
+│       ├── light_service.go      # Light sensor monitoring and ambient light tracking
+│       └── automation_service.go # Motion-activated lighting and smart home rules
 │
 ├── pkg/                    # Public library code
 │   ├── devices/           # Device implementations
@@ -223,6 +253,10 @@ If you prefer manual setup or need customization:
 
 ### Thermostat Development
 - `go run ./cmd/thermostat/` - Run thermostat service locally
+- `go run ./cmd/motion/` - Run motion detection service locally
+- `go run ./cmd/light/` - Run light sensor service locally
+- `go run ./cmd/integrated/` - Run integrated service with motion-activated lighting
+- `go run ./cmd/automation-demo/` - Demo motion-activated lighting automation
 - `go run ./cmd/temp-demo/` - Demo temperature conversions
 - `go test ./pkg/utils/` - Test temperature conversion utilities
 
@@ -288,16 +322,21 @@ Deploy comprehensive environmental monitoring throughout your home:
 ### MQTT Topics (All Environmental Data):
 - **Temperature**: `room-temp/{room_number}` (°F) → Thermostat control
 - **Humidity**: `room-hum/{room_number}` (%) → Environmental monitoring
-- **Motion**: `room-motion/{room_number}` (occupancy) → Presence detection
-- **Light**: `room-light/{room_number}` (%) → Ambient light levels
+- **Motion**: `room-motion/{room_number}` (occupancy) → Presence detection + light automation
+- **Light**: `room-light/{room_number}` (%) → Ambient light levels + automation triggers
 - **Control**: `thermostat/{thermostat_id}/control` (HVAC commands)
+- **Automation**: `automation/{room_id}` (automation events and light control)
 
 ### Example Multi-Sensor Operation:
-**Smart Home Intelligence**
+**Smart Home Intelligence with Motion-Activated Lighting**
 - 🌡️ **HVAC**: Target 70°F ±1°F hysteresis with automatic heating/cooling
 - 👥 **Occupancy**: Motion detection for energy-saving and security
 - 🌞 **Lighting**: Ambient light monitoring for automatic lighting control
 - 🏠 **Integration**: Cross-sensor automation (e.g., occupied + dark = lights on)
+- 🤖 **Automation**: Motion-activated lighting with intelligent dark room detection
+- 💡 **Smart Control**: Lights automatically turn on when motion detected in rooms with <20% ambient light
+- ⏰ **Cooldown Logic**: 5-minute cooldown prevents rapid on/off cycling
+- 📡 **Event Publishing**: Real-time automation events published to MQTT for monitoring
 
 ## 🔧 Management & Monitoring
 

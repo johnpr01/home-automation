@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -10,6 +11,7 @@ import (
 	"github.com/johnpr01/home-automation/internal/config"
 	"github.com/johnpr01/home-automation/internal/models"
 	"github.com/johnpr01/home-automation/internal/services"
+	"github.com/johnpr01/home-automation/pkg/kafka"
 	"github.com/johnpr01/home-automation/pkg/mqtt"
 	"github.com/johnpr01/home-automation/pkg/utils"
 )
@@ -35,10 +37,25 @@ func main() {
 
 	logger.Println("Connected to MQTT broker")
 
+	// Create Kafka client for device service logging
+	kafkaClient := kafka.NewClient([]string{"localhost:9092"}, "home-automation-logs")
+
 	// Create independent services
 	motionService := services.NewMotionService(mqttClient, logger)
 	lightService := services.NewLightService(mqttClient, logger)
 	thermostatService := services.NewThermostatService(mqttClient, logger)
+	deviceService := services.NewDeviceService(mqttClient, kafkaClient)
+
+	// Create automation service that coordinates between sensors and devices
+	automationService := services.NewAutomationService(motionService, lightService, deviceService, mqttClient, logger)
+
+	logger.Println("🏠 Automation Service: Motion-activated lighting enabled!")
+	logger.Println("📋 Rules: When motion detected + dark conditions → Turn on lights")
+
+	// Log automation service status
+	status := automationService.GetStatus()
+	logger.Printf("Automation Service Status: %d rules enabled, dark threshold: %.1f%%",
+		status["enabled_rules"], status["dark_threshold"])
 
 	// Register sample thermostat
 	thermostat := &models.Thermostat{
@@ -59,36 +76,55 @@ func main() {
 	}
 	thermostatService.RegisterThermostat(thermostat)
 
-	// Optional: Create integration between services
-	// This shows how the services can communicate if needed, but they remain independent
+	// Register light devices for automation
+	rooms := []struct {
+		id   string
+		name string
+	}{
+		{"living-room", "Living Room"},
+		{"kitchen", "Kitchen"},
+		{"bedroom", "Bedroom"},
+		{"bathroom", "Bathroom"},
+		{"office", "Office"},
+		{"hallway", "Hallway"},
+	}
+
+	for _, room := range rooms {
+		lightDevice := &models.Device{
+			ID:     fmt.Sprintf("light-%s", room.id),
+			Name:   fmt.Sprintf("%s Light", room.name),
+			Type:   models.DeviceTypeLight,
+			Status: "off",
+			Properties: map[string]interface{}{
+				"power":      false,
+				"brightness": 100,
+				"room_id":    room.id,
+			},
+			LastUpdated: time.Now(),
+		}
+
+		err := deviceService.AddDevice(lightDevice)
+		if err != nil {
+			logger.Printf("Failed to add light device for %s: %v", room.name, err)
+		} else {
+			logger.Printf("Added light device: %s", lightDevice.Name)
+		}
+	}
+
+	// Optional: Create integration between services for additional monitoring
+	// The AutomationService already handles motion + light → light control
+	// These callbacks provide additional logging for monitoring
 	motionService.AddOccupancyCallback(func(roomID string, occupied bool) {
 		status := "UNOCCUPIED"
 		if occupied {
 			status = "OCCUPIED"
 		}
-		logger.Printf("Integration: Room %s is now %s", roomID, status)
-
-		// Example: You could adjust thermostat behavior based on occupancy
-		// For now, just log the occupancy change
-		if occupancy, exists := motionService.GetRoomOccupancy(roomID); exists {
-			logger.Printf("Integration: Room %s occupancy details - Device: %s, Online: %v",
-				roomID, occupancy.DeviceID, occupancy.IsOnline)
-		}
+		logger.Printf("Integration Monitor: Room %s is now %s", roomID, status)
 	})
 
-	// Optional: Light level integration for automation
+	// Optional: Additional light level monitoring
 	lightService.AddLightCallback(func(roomID string, lightState string, lightLevel float64) {
-		logger.Printf("Integration: Room %s light level changed to %s (%.1f%%)", roomID, lightState, lightLevel)
-
-		// Example automation based on light and occupancy
-		if occupancy, exists := motionService.GetRoomOccupancy(roomID); exists && occupancy.IsOccupied {
-			switch lightState {
-			case "dark":
-				logger.Printf("Integration: Room %s is occupied and dark - could turn on lights", roomID)
-			case "bright":
-				logger.Printf("Integration: Room %s is occupied and bright - could turn off lights", roomID)
-			}
-		}
+		logger.Printf("Integration Monitor: Room %s light level: %s (%.1f%%)", roomID, lightState, lightLevel)
 	})
 
 	// Start periodic status reporting
