@@ -3,11 +3,12 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/johnpr01/home-automation/internal/errors"
+	"github.com/johnpr01/home-automation/internal/logger"
 	"github.com/johnpr01/home-automation/internal/models"
 	"github.com/johnpr01/home-automation/pkg/mqtt"
 	"github.com/johnpr01/home-automation/pkg/utils"
@@ -15,18 +16,20 @@ import (
 
 // ThermostatService manages smart thermostats and processes sensor data
 type ThermostatService struct {
-	thermostats map[string]*models.Thermostat
-	mqttClient  *mqtt.Client
-	mu          sync.RWMutex
-	logger      *log.Logger
+	thermostats  map[string]*models.Thermostat
+	mqttClient   *mqtt.Client
+	mu           sync.RWMutex
+	logger       *logger.Logger
+	errorHandler *errors.ErrorHandler
 }
 
 // NewThermostatService creates a new thermostat service
-func NewThermostatService(mqttClient *mqtt.Client, logger *log.Logger) *ThermostatService {
+func NewThermostatService(mqttClient *mqtt.Client, serviceLogger *logger.Logger) *ThermostatService {
 	service := &ThermostatService{
-		thermostats: make(map[string]*models.Thermostat),
-		mqttClient:  mqttClient,
-		logger:      logger,
+		thermostats:  make(map[string]*models.Thermostat),
+		mqttClient:   mqttClient,
+		logger:       serviceLogger,
+		errorHandler: errors.NewErrorHandler("thermostat-service"),
 	}
 
 	// Subscribe to sensor topics
@@ -66,7 +69,9 @@ func (ts *ThermostatService) HandleTemperatureUpdate(roomID string, temperature 
 			IsOnline:         true,
 		}
 		ts.thermostats[roomID] = thermostat
-		ts.logger.Printf("Created new thermostat for room %s", roomID)
+		ts.logger.Info("Created new thermostat for room", map[string]interface{}{
+			"room_id": roomID,
+		})
 	}
 
 	// Update current temperature

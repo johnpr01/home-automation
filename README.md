@@ -1,10 +1,10 @@
 # Home Automation System
 
-A comprehensive home automation system built in Go, designed to run on Raspberry Pi 5 with integrated sensor networks, MQTT messaging, and intelligent thermostat control.
+A comprehensive home automation system built in Go, designed to run on Raspberry Pi 5 with integrated sensor networks, MQTT messaging, intelligent thermostat control, and **comprehensive error handling**.
 
 ## 🏠 System Overview
 
-This system provides a unified platform for managing home automation devices with real-time environmental monitoring, motion detection, and intelligent climate control.
+This system provides a unified platform for managing home automation devices with real-time environmental monitoring, motion detection, intelligent climate control, and **production-ready error handling and monitoring**.
 
 ### Key Features
 
@@ -20,13 +20,25 @@ This system provides a unified platform for managing home automation devices wit
 - **Pi Pico Integration**: SHT-30, PIR, and photo transistor sensors via MQTT
 - **Multi-Zone Support**: Control multiple rooms independently
 - **Orthogonal Architecture**: Services operate independently but can integrate when needed
+- **🛡️ Comprehensive Error Handling**: Structured errors, retry mechanisms, circuit breakers, and health monitoring
+- **📊 Production Monitoring**: Structured logging, health checks, and error metrics
+- **🔄 Automatic Recovery**: Circuit breakers, retry logic, and graceful degradation
 
 ### 🏗️ **Service Architecture:**
 - **Thermostat Service**: HVAC temperature control and automation
-- **Motion Service**: PIR sensor monitoring and occupancy detection
+- **Motion Service**: PIR sensor monitoring and occupancy detection  
 - **Light Service**: Photo transistor ambient light tracking
 - **Integrated Service**: Optional combined service with cross-sensor automation
 - **Automation Service**: Motion-activated lighting and smart home rules
+
+### 🛡️ **Reliability & Error Handling:**
+- **Structured Error Types**: Connection, Device, Service, System, and Validation errors with severity levels
+- **Retry Mechanisms**: Exponential backoff with jitter and context-aware timeouts
+- **Circuit Breakers**: Prevent cascade failures with automatic recovery
+- **Health Monitoring**: Continuous service health checks with detailed reporting
+- **Graceful Degradation**: System continues operating with reduced functionality during partial failures
+- **Comprehensive Logging**: Structured JSON logging with Kafka integration for high-severity events
+- **Error Context**: Rich error information including stack traces, device IDs, and operational context
 
 ### 🤖 **Smart Automation Features:**
 - **Motion-Activated Lighting**: Automatically turn on lights when motion is detected in dark rooms
@@ -115,6 +127,12 @@ home-automation/
 ├── internal/               # Private application code
 │   ├── config/            # Configuration management
 │   │   └── config.go
+│   ├── errors/            # 🛡️ Comprehensive error handling system
+│   │   └── errors.go      # Structured errors, severity levels, context
+│   ├── logger/            # 📊 Structured logging with Kafka integration
+│   │   └── logger.go      # JSON logging, error integration, health monitoring
+│   ├── utils/             # 🔄 Retry mechanisms and reliability patterns
+│   │   └── retry.go       # Circuit breakers, health checks, exponential backoff
 │   ├── handlers/          # HTTP request handlers
 │   │   └── handlers.go
 │   ├── models/            # Data models
@@ -164,7 +182,8 @@ home-automation/
 │   ├── THERMOSTAT.md     # Smart thermostat guide
 │   ├── MOTION_DETECTION.md # PIR motion sensor guide
 │   ├── LIGHT_SENSOR.md   # Photo transistor light sensor guide
-│   └── FAHRENHEIT_CONVERSION.md # Fahrenheit conversion details
+│   ├── FAHRENHEIT_CONVERSION.md # Fahrenheit conversion details
+│   └── ERROR_HANDLING.md # Comprehensive error handling guide
 │
 ├── test/                  # Test files
 │   └── device_test.go    # Example tests
@@ -432,6 +451,36 @@ The system implements a comprehensive logging approach optimized for Raspberry P
 - **Error Tracking**: Centralized error collection and alerting
 - **IoT Sensor Data**: Temperature (°F), humidity, and motion monitoring from Pi Pico sensors
 - **System Health**: Raspberry Pi 5 resource monitoring (CPU, memory, temperature)
+
+## 🛡️ **Production-Ready Error Handling & Reliability**
+
+This system implements comprehensive error handling designed for production home automation environments.
+
+### 🔧 **Error Handling System**
+- **Structured Error Types**: Connection, Device, Service, System, and Validation errors with severity levels (Low, Medium, High, Critical)
+- **Rich Error Context**: Automatic capture of device IDs, room IDs, stack traces, timestamps, and operational context
+- **Error Classification**: Automatic determination of error retryability and criticality
+- **Error Wrapping**: Support for error chains with full cause tracking
+
+### 🔄 **Automatic Recovery Mechanisms**
+- **Retry Logic**: Exponential backoff with jitter for transient failures
+- **Circuit Breakers**: Prevent cascade failures and enable automatic recovery
+- **Health Monitoring**: Continuous service health checks with detailed reporting
+- **Graceful Degradation**: System continues operating with reduced functionality during partial failures
+
+### 📊 **Monitoring & Observability**
+- **Structured Logging**: JSON-formatted logs with automatic error context extraction
+- **Kafka Integration**: High-severity errors automatically sent to Kafka for alerting
+- **Health Checks**: Real-time monitoring of MQTT connections, service availability, and device status
+- **Error Metrics**: Track error rates, retry success rates, and circuit breaker states
+
+### 🚀 **Production Benefits**
+- **🔍 Improved Debugging**: Rich error context makes issues easy to diagnose
+- **⚡ Faster Recovery**: Automatic reconnection and healing for network issues
+- **📈 Higher Reliability**: Circuit breakers prevent system-wide failures
+- **🛡️ Better Monitoring**: Comprehensive health checks and structured error reporting
+
+**📖 Complete Documentation**: See [ERROR_HANDLING.md](ERROR_HANDLING.md) for detailed implementation guide, examples, and migration instructions.
 
 ## 🏠 Features
 
