@@ -22,10 +22,10 @@ func TestAutomationService_MotionActivatedLighting(t *testing.T) {
 		Broker: "localhost",
 		Port:   "1883",
 	}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	// Create mock Kafka client
-	kafkaClient := kafka.NewClient([]string{"localhost:9092"}, "test-logs")
+	kafkaClient := kafka.NewClient([]string{"localhost:9092"}, "test-logs", nil)
 
 	// Create services
 	motionService := NewMotionService(mqttClient, logger)
@@ -240,8 +240,8 @@ func TestAutomationService_CooldownLogic(t *testing.T) {
 		Broker: "localhost",
 		Port:   "1883",
 	}
-	mqttClient := mqtt.NewClient(mqttConfig)
-	kafkaClient := kafka.NewClient([]string{"localhost:9092"}, "test-logs")
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
+	kafkaClient := kafka.NewClient([]string{"localhost:9092"}, "test-logs", nil)
 
 	motionService := NewMotionService(mqttClient, logger)
 	lightService := NewLightService(mqttClient, logger)

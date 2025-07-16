@@ -52,7 +52,7 @@ func TestNewThermostatService(t *testing.T) {
 
 	// Create MQTT client wrapper
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewThermostatService(mqttClient, logger)
 
@@ -72,7 +72,7 @@ func TestNewThermostatService(t *testing.T) {
 func TestHandleTemperatureUpdate(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewThermostatService(mqttClient, logger)
 
@@ -113,7 +113,7 @@ func TestHandleTemperatureUpdate(t *testing.T) {
 func TestRegisterThermostat(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewThermostatService(mqttClient, logger)
 
@@ -154,7 +154,7 @@ func TestRegisterThermostat(t *testing.T) {
 func TestSetTargetTemperature(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewThermostatService(mqttClient, logger)
 
@@ -200,7 +200,7 @@ func TestSetTargetTemperature(t *testing.T) {
 func TestSetMode(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewThermostatService(mqttClient, logger)
 
@@ -242,7 +242,7 @@ func TestSetMode(t *testing.T) {
 func TestGetAllThermostats(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewThermostatService(mqttClient, logger)
 
@@ -278,7 +278,7 @@ func TestGetAllThermostats(t *testing.T) {
 func TestHandleTemperatureMessage(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewThermostatService(mqttClient, logger)
 
@@ -313,7 +313,7 @@ func TestHandleTemperatureMessage(t *testing.T) {
 func TestProcessThermostat(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewThermostatService(mqttClient, logger)
 
@@ -365,7 +365,7 @@ func TestProcessThermostat(t *testing.T) {
 func TestGetRoomTemperature(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewThermostatService(mqttClient, logger)
 
@@ -397,7 +397,7 @@ func TestGetRoomTemperature(t *testing.T) {
 func TestConcurrentAccess(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewThermostatService(mqttClient, logger)
 

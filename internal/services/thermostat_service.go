@@ -81,8 +81,12 @@ func (ts *ThermostatService) HandleTemperatureUpdate(roomID string, temperature 
 	thermostat.UpdatedAt = time.Now()
 	thermostat.IsOnline = true
 
-	ts.logger.Printf("Thermostat %s temperature update: %.1f°F -> %.1f°F",
-		roomID, oldTemp, temperature)
+	ts.logger.Info(fmt.Sprintf("Thermostat %s temperature update: %.1f°F -> %.1f°F", roomID, oldTemp, temperature), map[string]interface{}{
+		"room_id":   roomID,
+		"old_temp":  oldTemp,
+		"new_temp":  temperature,
+		"device_id": thermostat.ID,
+	})
 
 	// Trigger control logic evaluation
 	go ts.processThermostat(thermostat)
@@ -108,7 +112,7 @@ func (ts *ThermostatService) RegisterThermostat(thermostat *models.Thermostat) {
 	}
 
 	ts.thermostats[thermostat.ID] = thermostat
-	ts.logger.Printf("Registered thermostat: %s in room %s", thermostat.ID, thermostat.RoomID)
+	ts.logger.Info(fmt.Sprintf("Registered thermostat: %s in room %s", thermostat.ID, thermostat.RoomID))
 }
 
 // GetThermostat retrieves a thermostat by ID
@@ -155,7 +159,7 @@ func (ts *ThermostatService) SetTargetTemperature(id string, temp float64) error
 	thermostat.TargetTemp = temp
 	thermostat.UpdatedAt = time.Now()
 
-	ts.logger.Printf("Set target temperature for %s to %.1f°C", id, temp)
+	ts.logger.Info(fmt.Sprintf("Set target temperature for %s to %.1f°C", id, temp))
 
 	// Publish command to MQTT
 	ts.publishThermostatCommand(id, models.CmdSetTargetTemp, temp)
@@ -180,7 +184,7 @@ func (ts *ThermostatService) SetMode(id string, mode models.ThermostatMode) erro
 	thermostat.Mode = mode
 	thermostat.UpdatedAt = time.Now()
 
-	ts.logger.Printf("Set mode for %s to %s", id, mode)
+	ts.logger.Info(fmt.Sprintf("Set mode for %s to %s", id, mode))
 
 	// Publish command to MQTT
 	ts.publishThermostatCommand(id, models.CmdSetMode, string(mode))
@@ -194,7 +198,7 @@ func (ts *ThermostatService) subscribeSensorTopics() {
 	ts.mqttClient.Subscribe("room-temp/+", ts.handleTemperatureMessage)
 	ts.mqttClient.Subscribe("room-hum/+", ts.handleHumidityMessage)
 
-	ts.logger.Println("Subscribed to sensor MQTT topics: temp, humidity")
+	ts.logger.Info("Subscribed to sensor MQTT topics: temp, humidity")
 }
 
 // handleTemperatureMessage processes temperature messages from Pi Pico sensors
@@ -202,7 +206,7 @@ func (ts *ThermostatService) handleTemperatureMessage(topic string, payload []by
 	// Extract room number from topic (room-temp/1)
 	parts := strings.Split(topic, "/")
 	if len(parts) != 2 {
-		ts.logger.Printf("Invalid temperature topic format: %s", topic)
+		ts.logger.Info(fmt.Sprintf("Invalid temperature topic format: %s", topic))
 		return fmt.Errorf("invalid topic format: %s", topic)
 	}
 
@@ -211,7 +215,7 @@ func (ts *ThermostatService) handleTemperatureMessage(topic string, payload []by
 	// Parse JSON payload
 	var sensorData map[string]interface{}
 	if err := json.Unmarshal(payload, &sensorData); err != nil {
-		ts.logger.Printf("Failed to parse temperature message: %v", err)
+		ts.logger.Info(fmt.Sprintf("Failed to parse temperature message: %v", err))
 		return err
 	}
 
@@ -237,8 +241,7 @@ func (ts *ThermostatService) handleTemperatureMessage(topic string, payload []by
 				thermostat.UpdatedAt = time.Now()
 			}
 
-			ts.logger.Printf("Updated thermostat %s: %.1f°F -> %.1f°F",
-				thermostat.ID, oldTemp, thermostat.CurrentTemp)
+			ts.logger.Info(fmt.Sprintf("Updated thermostat %s: %.1f°F -> %.1f°F", thermostat.ID, oldTemp, thermostat.CurrentTemp))
 			break
 		}
 	}
@@ -251,7 +254,7 @@ func (ts *ThermostatService) handleHumidityMessage(topic string, payload []byte)
 	// Extract room number from topic (room-hum/1)
 	parts := strings.Split(topic, "/")
 	if len(parts) != 2 {
-		ts.logger.Printf("Invalid humidity topic format: %s", topic)
+		ts.logger.Info(fmt.Sprintf("Invalid humidity topic format: %s", topic))
 		return fmt.Errorf("invalid topic format: %s", topic)
 	}
 
@@ -260,7 +263,7 @@ func (ts *ThermostatService) handleHumidityMessage(topic string, payload []byte)
 	// Parse JSON payload
 	var sensorData map[string]interface{}
 	if err := json.Unmarshal(payload, &sensorData); err != nil {
-		ts.logger.Printf("Failed to parse humidity message: %v", err)
+		ts.logger.Info(fmt.Sprintf("Failed to parse humidity message: %v", err))
 		return err
 	}
 
@@ -278,8 +281,7 @@ func (ts *ThermostatService) handleHumidityMessage(topic string, payload []byte)
 				thermostat.IsOnline = true
 				thermostat.UpdatedAt = time.Now()
 
-				ts.logger.Printf("Updated thermostat %s humidity: %.1f%% -> %.1f%%",
-					thermostat.ID, oldHumidity, thermostat.CurrentHumidity)
+				ts.logger.Info(fmt.Sprintf("Updated thermostat %s humidity: %.1f%% -> %.1f%%", thermostat.ID, oldHumidity, thermostat.CurrentHumidity))
 			}
 			break
 		}
@@ -316,7 +318,7 @@ func (ts *ThermostatService) processThermostat(thermostat *models.Thermostat) {
 	// Check if sensor data is stale
 	if time.Since(thermostat.LastSensorUpdate) > 5*time.Minute {
 		thermostat.IsOnline = false
-		ts.logger.Printf("Thermostat %s is offline - no sensor data", thermostat.ID)
+		ts.logger.Info(fmt.Sprintf("Thermostat %s is offline - no sensor data", thermostat.ID))
 		return
 	}
 
@@ -329,8 +331,7 @@ func (ts *ThermostatService) processThermostat(thermostat *models.Thermostat) {
 		thermostat.Status = nextStatus
 		thermostat.UpdatedAt = time.Now()
 
-		ts.logger.Printf("Thermostat %s status: %s -> %s (current: %.1f°C, target: %.1f°C)",
-			thermostat.ID, oldStatus, nextStatus, thermostat.CurrentTemp, thermostat.TargetTemp)
+		ts.logger.Info(fmt.Sprintf("Thermostat %s status: %s -> %s (current: %.1f°C, target: %.1f°C)", thermostat.ID, oldStatus, nextStatus, thermostat.CurrentTemp, thermostat.TargetTemp))
 
 		// Send control command
 		ts.sendControlCommand(thermostat, nextStatus)
@@ -351,7 +352,7 @@ func (ts *ThermostatService) sendControlCommand(thermostat *models.Thermostat, s
 
 	payload, err := json.Marshal(command)
 	if err != nil {
-		ts.logger.Printf("Failed to marshal control command: %v", err)
+		ts.logger.Info(fmt.Sprintf("Failed to marshal control command: %v", err))
 		return
 	}
 
@@ -363,9 +364,9 @@ func (ts *ThermostatService) sendControlCommand(thermostat *models.Thermostat, s
 	}
 
 	if err := ts.mqttClient.Publish(msg); err != nil {
-		ts.logger.Printf("Failed to publish control command: %v", err)
+		ts.logger.Info(fmt.Sprintf("Failed to publish control command: %v", err))
 	} else {
-		ts.logger.Printf("Sent control command to %s: %s", thermostat.ID, string(status))
+		ts.logger.Info(fmt.Sprintf("Sent control command to %s: %s", thermostat.ID, string(status)))
 	}
 }
 
@@ -381,7 +382,7 @@ func (ts *ThermostatService) publishThermostatCommand(id string, cmdType string,
 
 	payload, err := json.Marshal(command)
 	if err != nil {
-		ts.logger.Printf("Failed to marshal thermostat command: %v", err)
+		ts.logger.Info(fmt.Sprintf("Failed to marshal thermostat command: %v", err))
 		return
 	}
 
@@ -393,7 +394,7 @@ func (ts *ThermostatService) publishThermostatCommand(id string, cmdType string,
 	}
 
 	if err := ts.mqttClient.Publish(msg); err != nil {
-		ts.logger.Printf("Failed to publish thermostat command: %v", err)
+		ts.logger.Info(fmt.Sprintf("Failed to publish thermostat command: %v", err))
 	}
 }
 

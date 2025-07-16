@@ -15,7 +15,7 @@ import (
 func TestNewMotionService(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewMotionService(mqttClient, logger)
 
@@ -35,7 +35,7 @@ func TestNewMotionService(t *testing.T) {
 func TestAddMotionCallback(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewMotionService(mqttClient, logger)
 
@@ -85,7 +85,7 @@ func TestAddMotionCallback(t *testing.T) {
 func TestGetRoomOccupancy(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewMotionService(mqttClient, logger)
 
@@ -132,7 +132,7 @@ func TestGetRoomOccupancy(t *testing.T) {
 func TestGetAllRoomOccupancy(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewMotionService(mqttClient, logger)
 
@@ -178,7 +178,7 @@ func TestGetAllRoomOccupancy(t *testing.T) {
 func TestHandleMotionMessage(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewMotionService(mqttClient, logger)
 
@@ -232,7 +232,7 @@ func TestHandleMotionMessage(t *testing.T) {
 func TestExtractRoomIDFromTopic(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewMotionService(mqttClient, logger)
 
@@ -269,7 +269,7 @@ func TestExtractRoomIDFromTopic(t *testing.T) {
 func TestMotionServiceSummary(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewMotionService(mqttClient, logger)
 
@@ -324,7 +324,7 @@ func TestMotionServiceSummary(t *testing.T) {
 func TestInvalidMotionMessage(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewMotionService(mqttClient, logger)
 
@@ -346,7 +346,7 @@ func TestInvalidMotionMessage(t *testing.T) {
 func TestConcurrentMotionUpdates(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewMotionService(mqttClient, logger)
 
@@ -388,7 +388,7 @@ func TestConcurrentMotionUpdates(t *testing.T) {
 func TestMotionTimeout(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewMotionService(mqttClient, logger)
 
@@ -423,7 +423,7 @@ func TestMotionTimeout(t *testing.T) {
 func TestDeviceOnlineStatus(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewMotionService(mqttClient, logger)
 

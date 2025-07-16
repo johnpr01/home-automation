@@ -20,7 +20,7 @@ func TestUnifiedSensorService(t *testing.T) {
 		Broker: "localhost",
 		Port:   "1883",
 	}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	// Create unified sensor service
 	service := NewUnifiedSensorService(mqttClient, logger)

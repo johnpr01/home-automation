@@ -24,14 +24,14 @@ func main() {
 		Username: "",
 		Password: "",
 	}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 	if err := mqttClient.Connect(); err != nil {
 		logger.Fatalf("Failed to connect to MQTT broker: %v", err)
 	}
 	defer mqttClient.Disconnect()
 
 	// Create Kafka client
-	kafkaClient := kafka.NewClient([]string{"localhost:9092"}, "home-automation-logs")
+	kafkaClient := kafka.NewClient([]string{"localhost:9092"}, "home-automation-logs", nil)
 
 	// Create services
 	motionService := services.NewMotionService(mqttClient, logger)

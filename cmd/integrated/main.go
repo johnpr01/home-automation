@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/johnpr01/home-automation/internal/config"
+	"github.com/johnpr01/home-automation/internal/logger"
 	"github.com/johnpr01/home-automation/internal/models"
 	"github.com/johnpr01/home-automation/internal/services"
 	"github.com/johnpr01/home-automation/pkg/kafka"
@@ -17,8 +17,12 @@ import (
 )
 
 func main() {
-	logger := log.New(os.Stdout, "[INTEGRATED] ", log.LstdFlags|log.Lshortfile)
-	logger.Println("Starting Integrated Home Automation Service...")
+	// Create Kafka client for logging
+	kafkaClient := kafka.NewClient([]string{"localhost:9092"}, "home-automation-logs", nil)
+
+	// Create custom logger
+	customLogger := logger.NewLogger("IntegratedService", kafkaClient)
+	customLogger.Info("Starting Integrated Home Automation Service...")
 
 	// Load MQTT configuration
 	mqttConfig := &config.MQTTConfig{
@@ -29,16 +33,15 @@ func main() {
 	}
 
 	// Create MQTT client
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 	if err := mqttClient.Connect(); err != nil {
-		logger.Fatalf("Failed to connect to MQTT broker: %v", err)
+		customLogger.Fatal("Failed to connect to MQTT broker", err)
 	}
 	defer mqttClient.Disconnect()
 
-	logger.Println("Connected to MQTT broker")
+	customLogger.Info("Connected to MQTT broker")
 
-	// Create Kafka client for device service logging
-	kafkaClient := kafka.NewClient([]string{"localhost:9092"}, "home-automation-logs")
+	// Kafka client is already created above
 
 	// Create independent services
 	motionService := services.NewMotionService(mqttClient, logger)

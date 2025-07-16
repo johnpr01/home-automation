@@ -11,6 +11,7 @@ This system provides a unified platform for managing home automation devices wit
 - **Multi-Sensor Integration**: Temperature, humidity, motion, and light sensors on a single Pi Pico device
 - **Unified Sensor Service**: Centralized management of all sensor data with intelligent aggregation
 - **Smart Thermostat**: Fahrenheit-based climate control with occupancy awareness
+- **Energy Monitoring**: TP-Link Tapo smart plug monitoring with InfluxDB time-series storage
 - **Real-time MQTT**: Low-latency sensor data transmission and device control
 - **Microcontroller Sensors**: Pi Pico WH with SHT-30, PIR, and photo transistor sensors
 - **Container Orchestration**: Docker Compose with optimized resource allocation
@@ -20,6 +21,8 @@ This system provides a unified platform for managing home automation devices wit
 - **Pi Pico Integration**: SHT-30, PIR, and photo transistor sensors via MQTT
 - **Multi-Zone Support**: Control multiple rooms independently
 - **Orthogonal Architecture**: Services operate independently but can integrate when needed
+- **📊 Time-Series Analytics**: InfluxDB + Grafana dashboards for energy and sensor monitoring
+- **🔌 Smart Plug Control**: TP-Link Tapo integration for power monitoring and device control
 - **🛡️ Comprehensive Error Handling**: Structured errors, retry mechanisms, circuit breakers, and health monitoring
 - **📊 Production Monitoring**: Structured logging, health checks, and error metrics
 - **🔄 Automatic Recovery**: Circuit breakers, retry logic, and graceful degradation
@@ -28,6 +31,7 @@ This system provides a unified platform for managing home automation devices wit
 - **Thermostat Service**: HVAC temperature control and automation
 - **Motion Service**: PIR sensor monitoring and occupancy detection  
 - **Light Service**: Photo transistor ambient light tracking
+- **Tapo Service**: TP-Link smart plug energy monitoring and control
 - **Integrated Service**: Optional combined service with cross-sensor automation
 - **Automation Service**: Motion-activated lighting and smart home rules
 
@@ -115,6 +119,8 @@ home-automation/
 │   │   └── main.go         # PIR sensor monitoring and occupancy tracking
 │   ├── light/              # Light sensor service
 │   │   └── main.go         # Photo transistor ambient light monitoring
+│   ├── tapo-demo/          # TP-Link Tapo smart plug monitoring
+│   │   └── main.go         # Energy monitoring and device control
 │   ├── integrated/         # Integrated service with motion-activated lighting
 │   │   └── main.go         # Combined services with automation rules
 │   ├── automation-demo/    # Motion-activated lighting demo
@@ -144,6 +150,7 @@ home-automation/
 │       ├── thermostat_service.go # Thermostat control logic (HVAC focused)
 │       ├── motion_service.go     # Motion detection and room occupancy
 │       ├── light_service.go      # Light sensor monitoring and ambient light tracking
+│       ├── tapo_service.go       # TP-Link Tapo smart plug monitoring
 │       └── automation_service.go # Motion-activated lighting and smart home rules
 │
 ├── pkg/                    # Public library code
@@ -152,6 +159,10 @@ home-automation/
 │   ├── mqtt/              # MQTT client
 │   │   └── client.go
 │   ├── kafka/             # Kafka client for logging
+│   │   └── client.go
+│   ├── influxdb/          # InfluxDB time-series database client
+│   │   └── client.go
+│   ├── tapo/              # TP-Link Tapo smart plug client
 │   │   └── client.go
 │   ├── sensors/           # Sensor implementations
 │   │   └── temperature.go
@@ -172,7 +183,9 @@ home-automation/
 │           └── app.js
 │
 ├── configs/               # Configuration files
-│   └── config.yaml       # Default configuration
+│   ├── config.yaml       # Default configuration
+│   ├── tapo_template.yml # TP-Link Tapo device template
+│   └── tapo.yml          # TP-Link Tapo device configuration
 │
 ├── scripts/               # Development and deployment scripts
 │   └── setup.sh          # Development environment setup
@@ -183,6 +196,7 @@ home-automation/
 │   ├── MOTION_DETECTION.md # PIR motion sensor guide
 │   ├── LIGHT_SENSOR.md   # Photo transistor light sensor guide
 │   ├── FAHRENHEIT_CONVERSION.md # Fahrenheit conversion details
+│   ├── TAPO_ENERGY_MONITORING.md # TP-Link Tapo energy monitoring guide
 │   └── ERROR_HANDLING.md # Comprehensive error handling guide
 │
 ├── test/                  # Test files
@@ -199,12 +213,21 @@ home-automation/
 │       └── LIGHT_SENSOR.md  # Photo transistor setup guide
 │
 ├── deployments/          # Raspberry Pi 5 deployment
-│   ├── docker-compose.yml # Optimized for Pi 5
+│   ├── docker-compose.yml # Optimized for Pi 5 with InfluxDB + Grafana
 │   ├── deploy-pi5.sh     # Automated Pi 5 deployment
 │   ├── mosquitto/        # MQTT broker configuration
 │   │   ├── mosquitto.conf # Mosquitto configuration
 │   │   ├── acl.example   # Access control template
 │   │   └── passwd.example # Password file template
+│   ├── influxdb/         # Time-series database configuration
+│   │   └── influxdb.conf # InfluxDB configuration
+│   ├── grafana/          # Grafana dashboard configuration
+│   │   ├── provisioning/ # Data sources and dashboards
+│   │   │   ├── datasources/
+│   │   │   │   └── datasources.yml
+│   │   │   └── dashboards/
+│   │   │       ├── dashboard.yml
+│   │   │       └── tapo-energy-dashboard.json
 │   ├── scripts/          # Management scripts
 │   │   ├── health-check.sh # System health monitoring
 │   │   ├── backup.sh     # Backup script
@@ -237,7 +260,18 @@ home-automation/
    - **Home Automation API**: `http://YOUR_PI_IP:8080`
    - **Smart Thermostat**: Automatic control via MQTT
    - **Grafana Dashboard**: `http://YOUR_PI_IP:3000` (admin/homeauto2024)
+   - **InfluxDB**: `http://YOUR_PI_IP:8086` (Time-series data storage)
    - **MQTT Broker**: `YOUR_PI_IP:1883`
+
+4. **Configure Tapo Energy Monitoring:**
+   ```bash
+   # Configure your TP-Link Tapo devices
+   cp configs/tapo_template.yml configs/tapo.yml
+   # Edit configs/tapo.yml with your device IPs and credentials
+   
+   # Start Tapo monitoring service
+   cd cmd/tapo-demo && go run main.go
+   ```
 
 ### Manual Setup
 
@@ -274,6 +308,7 @@ If you prefer manual setup or need customization:
 - `go run ./cmd/thermostat/` - Run thermostat service locally
 - `go run ./cmd/motion/` - Run motion detection service locally
 - `go run ./cmd/light/` - Run light sensor service locally
+- `go run ./cmd/tapo-demo/` - Run Tapo energy monitoring service locally
 - `go run ./cmd/integrated/` - Run integrated service with motion-activated lighting
 - `go run ./cmd/automation-demo/` - Demo motion-activated lighting automation
 - `go run ./cmd/temp-demo/` - Demo temperature conversions
@@ -357,7 +392,50 @@ Deploy comprehensive environmental monitoring throughout your home:
 - ⏰ **Cooldown Logic**: 5-minute cooldown prevents rapid on/off cycling
 - 📡 **Event Publishing**: Real-time automation events published to MQTT for monitoring
 
-## 🔧 Management & Monitoring
+## � Energy Monitoring with TP-Link Tapo
+
+### Smart Plug Integration
+Monitor and control TP-Link Tapo smart plugs with comprehensive energy analytics:
+
+- **Real-time Power Monitoring**: Track current power consumption in watts
+- **Energy Usage Tracking**: Monitor cumulative energy consumption
+- **Device Control**: Turn devices on/off remotely via MQTT and API
+- **InfluxDB Storage**: Store time-series energy data for historical analysis
+- **Grafana Dashboards**: Visualize energy consumption patterns
+- **MQTT Integration**: Real-time energy data published to MQTT topics
+
+### Quick Setup
+1. **Configure your Tapo devices:**
+   ```bash
+   cp configs/tapo_template.yml configs/tapo.yml
+   # Edit with your device IPs, usernames, and passwords
+   ```
+
+2. **Start monitoring:**
+   ```bash
+   cd cmd/tapo-demo && go run main.go
+   ```
+
+3. **View dashboards:**
+   - Open Grafana: `http://YOUR_PI_IP:3000`
+   - Navigate to "Tapo Smart Plug Energy Monitoring" dashboard
+
+### Energy Data Topics
+- **Energy Metrics**: `tapo/{device_id}/energy` (power, voltage, current, energy)
+- **Device Control**: `tapo/{device_id}/control` (on/off commands)
+- **Status Updates**: `tapo/{device_id}/status` (connectivity, signal strength)
+
+### Supported Metrics
+- Power consumption (watts)
+- Cumulative energy usage (watt-hours)
+- Voltage and current readings
+- Device on/off state
+- WiFi signal strength
+- Device temperature (if available)
+
+For detailed setup instructions, see [docs/TAPO_ENERGY_MONITORING.md](docs/TAPO_ENERGY_MONITORING.md)
+
+## �🔧 Management & Monitoring
 
 ### Health Monitoring
 ```bash

@@ -15,7 +15,7 @@ import (
 func TestNewLightService(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewLightService(mqttClient, logger)
 
@@ -35,7 +35,7 @@ func TestNewLightService(t *testing.T) {
 func TestAddLightCallback(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewLightService(mqttClient, logger)
 
@@ -92,7 +92,7 @@ func TestAddLightCallback(t *testing.T) {
 func TestGetRoomLightLevel(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewLightService(mqttClient, logger)
 
@@ -144,7 +144,7 @@ func TestGetRoomLightLevel(t *testing.T) {
 func TestGetAllLightLevels(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewLightService(mqttClient, logger)
 
@@ -202,7 +202,7 @@ func TestGetAllLightLevels(t *testing.T) {
 func TestHandleLightMessage(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewLightService(mqttClient, logger)
 
@@ -264,7 +264,7 @@ func TestHandleLightMessage(t *testing.T) {
 func TestLightServiceSummary(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewLightService(mqttClient, logger)
 
@@ -323,7 +323,7 @@ func TestLightServiceSummary(t *testing.T) {
 func TestLightStates(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewLightService(mqttClient, logger)
 
@@ -372,7 +372,7 @@ func TestLightStates(t *testing.T) {
 func TestInvalidLightMessage(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewLightService(mqttClient, logger)
 
@@ -394,7 +394,7 @@ func TestInvalidLightMessage(t *testing.T) {
 func TestConcurrentLightUpdates(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewLightService(mqttClient, logger)
 
@@ -449,7 +449,7 @@ func TestConcurrentLightUpdates(t *testing.T) {
 func TestDeviceOnlineStatusLight(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	service := NewLightService(mqttClient, logger)
 

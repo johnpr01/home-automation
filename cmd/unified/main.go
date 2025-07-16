@@ -35,7 +35,7 @@ func main() {
 		Username: "",
 		Password: "",
 	}
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
 	// Connect to MQTT broker
 	if err := mqttClient.Connect(); err != nil {

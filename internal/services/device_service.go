@@ -2,10 +2,10 @@ package services
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"sync"
+	"time"
 
+	"github.com/johnpr01/home-automation/internal/logger"
 	"github.com/johnpr01/home-automation/internal/models"
 	"github.com/johnpr01/home-automation/pkg/kafka"
 	"github.com/johnpr01/home-automation/pkg/mqtt"
@@ -16,18 +16,11 @@ type DeviceService struct {
 	mutex       sync.RWMutex
 	mqttClient  *mqtt.Client
 	kafkaClient *kafka.Client
-	logger      *log.Logger
+	logger      *logger.Logger
 }
 
 func NewDeviceService(mqttClient *mqtt.Client, kafkaClient *kafka.Client) *DeviceService {
-	// Create or open log file
-	logFile, err := os.OpenFile("logs/device_service.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		// Fallback to stdout if log file can't be created
-		logFile = os.Stdout
-	}
-
-	logger := log.New(logFile, "[DeviceService] ", log.LstdFlags|log.Lshortfile)
+	logger := logger.NewLogger("DeviceService", kafkaClient)
 
 	return &DeviceService{
 		devices:     make(map[string]*models.Device),
@@ -39,15 +32,27 @@ func NewDeviceService(mqttClient *mqtt.Client, kafkaClient *kafka.Client) *Devic
 
 // logWithKafka logs to both file and Kafka
 func (s *DeviceService) logWithKafka(level, message string, deviceID, action string, metadata map[string]interface{}) {
-	// Log to file
-	s.logger.Printf(message)
+	// Log to structured logger
+	s.logger.Info(message, metadata)
 
 	// Send to Kafka if client is available
 	if s.kafkaClient != nil {
-		err := s.kafkaClient.PublishLog(level, "DeviceService", message, deviceID, action, metadata)
+		logMsg := &kafka.LogMessage{
+			Level:     level,
+			Service:   "DeviceService",
+			Message:   message,
+			DeviceID:  deviceID,
+			Action:    action,
+			Timestamp: time.Now().Format(time.RFC3339),
+			Metadata:  metadata,
+		}
+		err := s.kafkaClient.PublishLogMessage(logMsg)
 		if err != nil {
-			// Log Kafka publishing errors to file only (avoid infinite recursion)
-			s.logger.Printf("Failed to publish log to Kafka: %v", err)
+			// Log Kafka publishing errors
+			s.logger.Error("Failed to publish log to Kafka", err, map[string]interface{}{
+				"device_id": deviceID,
+				"action":    action,
+			})
 		}
 	}
 }
