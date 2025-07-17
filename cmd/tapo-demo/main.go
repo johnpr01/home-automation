@@ -10,8 +10,8 @@ import (
 	"github.com/johnpr01/home-automation/internal/config"
 	"github.com/johnpr01/home-automation/internal/logger"
 	"github.com/johnpr01/home-automation/internal/services"
-	"github.com/johnpr01/home-automation/pkg/influxdb"
 	"github.com/johnpr01/home-automation/pkg/mqtt"
+	"github.com/johnpr01/home-automation/pkg/prometheus"
 )
 
 func main() {
@@ -19,22 +19,17 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Initialize InfluxDB client
-	influxClient := influxdb.NewClient(
-		"http://localhost:8086",
-		"home-automation-token",
-		"home-automation",
-		"sensor-data",
-	)
+	// Initialize Prometheus client
+	prometheusClient := prometheus.NewClient("http://localhost:9090")
 
-	if influxClient != nil {
-		if err := influxClient.Connect(); err != nil {
-			// Log error but continue - InfluxDB is optional
-			influxClient = nil
+	if prometheusClient != nil {
+		if err := prometheusClient.Connect(); err != nil {
+			// Log error but continue - Prometheus is optional
+			prometheusClient = nil
 		}
 		defer func() {
-			if influxClient != nil {
-				influxClient.Disconnect()
+			if prometheusClient != nil {
+				prometheusClient.Disconnect()
 			}
 		}()
 	}
@@ -61,7 +56,7 @@ func main() {
 	serviceLogger.Info("Connected to MQTT broker")
 
 	// Create Tapo service
-	tapoService := services.NewTapoService(mqttClient, influxClient, serviceLogger)
+	tapoService := services.NewTapoService(mqttClient, prometheusClient, serviceLogger)
 
 	// Get password from environment variable (GitHub Actions secret)
 	tplinkPassword := os.Getenv("TPLINK_PASSWORD")
@@ -80,24 +75,27 @@ func main() {
 			Username:     "johnpr01@gmail.com", // Replace with your Tapo account username
 			Password:     tplinkPassword,       // Using environment variable from GitHub Actions secret
 			PollInterval: 30 * time.Second,
+			UseKlap:      true, // Enable KLAP protocol for newer firmware (1.1.0+)
 		},
 		{
-			DeviceID:     "tapo_kitchen_1",
-			DeviceName:   "Kitchen Coffee Maker",
-			RoomID:       "kitchen",
-			IPAddress:    "192.168.1.101",      // Replace with your device IP
+			DeviceID:     "wasjhing_machine",
+			DeviceName:   "Washing Machine",
+			RoomID:       "laundry_room",
+			IPAddress:    "192.168.68.53",      // Replace with your device IP
 			Username:     "johnpr01@gmail.com", // Replace with your Tapo account username
 			Password:     tplinkPassword,       // Using environment variable from GitHub Actions secret
 			PollInterval: 30 * time.Second,
+			UseKlap:      true, // Enable KLAP protocol for newer firmware
 		},
 		{
-			DeviceID:     "tapo_office_1",
-			DeviceName:   "Office Monitor",
-			RoomID:       "office",
-			IPAddress:    "192.168.1.102",      // Replace with your device IP
+			DeviceID:     "Hi-Fi Power",
+			DeviceName:   "Hi-Fi Power",
+			RoomID:       "den",
+			IPAddress:    "192.168.68.60",      // Replace with your device IP
 			Username:     "johnpr01@gmail.com", // Replace with your Tapo account username
 			Password:     tplinkPassword,       // Using environment variable from GitHub Actions secret
 			PollInterval: 60 * time.Second,
+			UseKlap:      false, // Use legacy protocol for testing compatibility
 		},
 	}
 

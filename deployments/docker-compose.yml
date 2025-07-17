@@ -13,10 +13,13 @@ services:
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_LOG_TOPIC=home-automation-logs
       - LOG_FILE_PATH=/app/logs/home-automation.log
+      - PROMETHEUS_URL=http://prometheus:9090
+      - PROMETHEUS_PUSHGATEWAY_URL=http://prometheus:9091
     depends_on:
       - postgres
       - mosquitto
       - kafka
+      - prometheus
     volumes:
       - ../configs:/app/configs:ro
       - ../logs:/app/logs
@@ -153,6 +156,40 @@ services:
           memory: 256M
           cpus: '0.5'
 
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=30d'
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - home-automation
+    # Raspberry Pi 5 optimizations
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
   grafana:
     image: grafana/grafana:latest
     ports:
@@ -160,11 +197,14 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - postgres
+      - influxdb
     restart: unless-stopped
     networks:
       - home-automation
@@ -182,6 +222,7 @@ volumes:
   redis_data:
   kafka_data:
   grafana_data:
+  prometheus_data:
 
 networks:
   home-automation:

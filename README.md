@@ -11,7 +11,8 @@ This system provides a unified platform for managing home automation devices wit
 - **Multi-Sensor Integration**: Temperature, humidity, motion, and light sensors on a single Pi Pico device
 - **Unified Sensor Service**: Centralized management of all sensor data with intelligent aggregation
 - **Smart Thermostat**: Fahrenheit-based climate control with occupancy awareness
-- **Energy Monitoring**: TP-Link Tapo smart plug monitoring with InfluxDB time-series storage
+- **Energy Monitoring**: TP-Link Tapo smart plug monitoring with Prometheus time-series storage and KLAP protocol support
+- **Modern Protocol Support**: KLAP protocol implementation for Tapo firmware 1.1.0+ with legacy fallback
 - **Real-time MQTT**: Low-latency sensor data transmission and device control
 - **Microcontroller Sensors**: Pi Pico WH with SHT-30, PIR, and photo transistor sensors
 - **Container Orchestration**: Docker Compose with optimized resource allocation
@@ -21,7 +22,7 @@ This system provides a unified platform for managing home automation devices wit
 - **Pi Pico Integration**: SHT-30, PIR, and photo transistor sensors via MQTT
 - **Multi-Zone Support**: Control multiple rooms independently
 - **Orthogonal Architecture**: Services operate independently but can integrate when needed
-- **📊 Time-Series Analytics**: InfluxDB + Grafana dashboards for energy and sensor monitoring
+- **📊 Time-Series Analytics**: Prometheus + Grafana dashboards for energy and sensor monitoring
 - **🔌 Smart Plug Control**: TP-Link Tapo integration for power monitoring and device control
 - **🛡️ Comprehensive Error Handling**: Structured errors, retry mechanisms, circuit breakers, and health monitoring
 - **📊 Production Monitoring**: Structured logging, health checks, and error metrics
@@ -252,8 +253,8 @@ home-automation/
 2. **Deploy the home automation system:**
    ```bash
    git clone https://github.com/yourname/home-automation.git
-   cd home-automation/deployments
-   ./deploy-pi5.sh
+   cd home-automation
+   ./deploy-with-influxdb.sh
    ```
 
 3. **Access your services:**
@@ -400,7 +401,7 @@ Monitor and control TP-Link Tapo smart plugs with comprehensive energy analytics
 - **Real-time Power Monitoring**: Track current power consumption in watts
 - **Energy Usage Tracking**: Monitor cumulative energy consumption
 - **Device Control**: Turn devices on/off remotely via MQTT and API
-- **InfluxDB Storage**: Store time-series energy data for historical analysis
+- **Prometheus Storage**: Store time-series energy data for historical analysis
 - **Grafana Dashboards**: Visualize energy consumption patterns
 - **MQTT Integration**: Real-time energy data published to MQTT topics
 
@@ -433,7 +434,9 @@ Monitor and control TP-Link Tapo smart plugs with comprehensive energy analytics
 - WiFi signal strength
 - Device temperature (if available)
 
-For detailed setup instructions, see [docs/TAPO_ENERGY_MONITORING.md](docs/TAPO_ENERGY_MONITORING.md)
+For detailed setup instructions, see:
+- [docs/TAPO_ENERGY_MONITORING.md](docs/TAPO_ENERGY_MONITORING.md)
+- [docs/TAPO_KLAP.md](docs/TAPO_KLAP.md) - KLAP protocol implementation for firmware 1.1.0+
 
 ## �🔧 Management & Monitoring
 

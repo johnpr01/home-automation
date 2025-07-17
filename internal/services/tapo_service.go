@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -8,20 +9,19 @@ import (
 
 	"github.com/johnpr01/home-automation/internal/errors"
 	"github.com/johnpr01/home-automation/internal/logger"
-	"github.com/johnpr01/home-automation/pkg/influxdb"
 	"github.com/johnpr01/home-automation/pkg/mqtt"
 	"github.com/johnpr01/home-automation/pkg/tapo"
 )
 
 // TapoService manages TP-Link Tapo smart plugs and energy monitoring
 type TapoService struct {
-	devices      map[string]*TapoDeviceManager
-	mqttClient   *mqtt.Client
-	influxClient *influxdb.Client
-	logger       *logger.Logger
-	mu           sync.RWMutex
-	running      bool
-	stopChan     chan struct{}
+	devices    map[string]*TapoDeviceManager
+	mqttClient *mqtt.Client
+	tsClient   TimeSeriesClient
+	logger     *logger.Logger
+	mu         sync.RWMutex
+	running    bool
+	stopChan   chan struct{}
 }
 
 // TapoDeviceManager manages a single Tapo device
@@ -32,10 +32,12 @@ type TapoDeviceManager struct {
 	IPAddress    string
 	Username     string
 	Password     string
-	Client       *tapo.TapoClient
+	Client       interface{} // Can be *tapo.TapoClient or *tapo.KlapClient
+	KlapClient   *tapo.KlapClient
 	PollInterval time.Duration
 	LastReading  time.Time
 	IsConnected  bool
+	UseKlap      bool
 }
 
 // TapoConfig represents configuration for Tapo devices
@@ -47,16 +49,17 @@ type TapoConfig struct {
 	Username     string        `json:"username"`
 	Password     string        `json:"password"`
 	PollInterval time.Duration `json:"poll_interval"`
+	UseKlap      bool          `json:"use_klap"`
 }
 
 // NewTapoService creates a new Tapo service
-func NewTapoService(mqttClient *mqtt.Client, influxClient *influxdb.Client, serviceLogger *logger.Logger) *TapoService {
+func NewTapoService(mqttClient *mqtt.Client, tsClient TimeSeriesClient, serviceLogger *logger.Logger) *TapoService {
 	return &TapoService{
-		devices:      make(map[string]*TapoDeviceManager),
-		mqttClient:   mqttClient,
-		influxClient: influxClient,
-		logger:       serviceLogger,
-		stopChan:     make(chan struct{}),
+		devices:    make(map[string]*TapoDeviceManager),
+		mqttClient: mqttClient,
+		tsClient:   tsClient,
+		logger:     serviceLogger,
+		stopChan:   make(chan struct{}),
 	}
 }
 
@@ -69,14 +72,6 @@ func (ts *TapoService) AddDevice(config *TapoConfig) error {
 		config.PollInterval = 30 * time.Second // Default 30 seconds
 	}
 
-	// Create Tapo client
-	client := tapo.NewTapoClient(config.IPAddress, config.Username, config.Password, ts.logger)
-
-	// Test connection
-	if err := client.Connect(); err != nil {
-		return errors.NewDeviceError(fmt.Sprintf("Failed to connect to Tapo device %s", config.DeviceID), err)
-	}
-
 	manager := &TapoDeviceManager{
 		DeviceID:     config.DeviceID,
 		DeviceName:   config.DeviceName,
@@ -84,11 +79,33 @@ func (ts *TapoService) AddDevice(config *TapoConfig) error {
 		IPAddress:    config.IPAddress,
 		Username:     config.Username,
 		Password:     config.Password,
-		Client:       client,
 		PollInterval: config.PollInterval,
-		IsConnected:  true,
+		UseKlap:      config.UseKlap,
 	}
 
+	// Create appropriate client based on configuration
+	if config.UseKlap {
+		// Create KLAP client for newer firmware
+		klapClient := tapo.NewKlapClient(config.IPAddress, config.Username, config.Password, 30*time.Second, *ts.logger)
+		manager.KlapClient = klapClient
+
+		// Test connection
+		ctx := context.Background()
+		if err := klapClient.Connect(ctx); err != nil {
+			return errors.NewDeviceError(fmt.Sprintf("Failed to connect to Tapo device %s using KLAP", config.DeviceID), err)
+		}
+	} else {
+		// Create legacy client for older firmware
+		client := tapo.NewTapoClient(config.IPAddress, config.Username, config.Password, ts.logger)
+		manager.Client = client
+
+		// Test connection
+		if err := client.Connect(); err != nil {
+			return errors.NewDeviceError(fmt.Sprintf("Failed to connect to Tapo device %s", config.DeviceID), err)
+		}
+	}
+
+	manager.IsConnected = true
 	ts.devices[config.DeviceID] = manager
 
 	ts.logger.Info("Added Tapo device", map[string]interface{}{
@@ -96,6 +113,7 @@ func (ts *TapoService) AddDevice(config *TapoConfig) error {
 		"device_name": config.DeviceName,
 		"room_id":     config.RoomID,
 		"ip_address":  config.IPAddress,
+		"use_klap":    config.UseKlap,
 	})
 
 	return nil
@@ -182,8 +200,23 @@ func (ts *TapoService) monitorDevice(deviceID string, manager *TapoDeviceManager
 func (ts *TapoService) pollDevice(manager *TapoDeviceManager) {
 	// Reconnect if needed
 	if !manager.IsConnected {
-		if err := manager.Client.Connect(); err != nil {
-			ts.logger.Error("Failed to reconnect to Tapo device", err, map[string]interface{}{
+		if manager.UseKlap && manager.KlapClient != nil {
+			ctx := context.Background()
+			if err := manager.KlapClient.Connect(ctx); err != nil {
+				ts.logger.Error("Failed to reconnect to Tapo device using KLAP", err, map[string]interface{}{
+					"device_id": manager.DeviceID,
+				})
+				return
+			}
+		} else if client, ok := manager.Client.(*tapo.TapoClient); ok {
+			if err := client.Connect(); err != nil {
+				ts.logger.Error("Failed to reconnect to Tapo device", err, map[string]interface{}{
+					"device_id": manager.DeviceID,
+				})
+				return
+			}
+		} else {
+			ts.logger.Error("Invalid client type for device", nil, map[string]interface{}{
 				"device_id": manager.DeviceID,
 			})
 			return
@@ -191,41 +224,93 @@ func (ts *TapoService) pollDevice(manager *TapoDeviceManager) {
 		manager.IsConnected = true
 	}
 
-	// Get device info
-	deviceInfo, err := manager.Client.GetDeviceInfo()
-	if err != nil {
-		ts.logger.Error("Failed to get device info", err, map[string]interface{}{
+	var deviceInfo interface{}
+	var energyUsage interface{}
+
+	// Get device info and energy usage based on client type
+	if manager.UseKlap && manager.KlapClient != nil {
+		ctx := context.Background()
+		klapDeviceInfo, err := manager.KlapClient.GetDeviceInfo(ctx)
+		if err != nil {
+			ts.logger.Error("Failed to get device info via KLAP", err, map[string]interface{}{
+				"device_id": manager.DeviceID,
+			})
+			manager.IsConnected = false
+			return
+		}
+		deviceInfo = klapDeviceInfo
+
+		klapEnergyUsage, err := manager.KlapClient.GetEnergyUsage(ctx)
+		if err != nil {
+			ts.logger.Error("Failed to get energy usage via KLAP", err, map[string]interface{}{
+				"device_id": manager.DeviceID,
+			})
+			return
+		}
+		energyUsage = klapEnergyUsage
+	} else if client, ok := manager.Client.(*tapo.TapoClient); ok {
+		legacyDeviceInfo, err := client.GetDeviceInfo()
+		if err != nil {
+			ts.logger.Error("Failed to get device info", err, map[string]interface{}{
+				"device_id": manager.DeviceID,
+			})
+			manager.IsConnected = false
+			return
+		}
+		deviceInfo = legacyDeviceInfo
+
+		legacyEnergyUsage, err := client.GetEnergyUsage()
+		if err != nil {
+			ts.logger.Error("Failed to get energy usage", err, map[string]interface{}{
+				"device_id": manager.DeviceID,
+			})
+			return
+		}
+		energyUsage = legacyEnergyUsage
+	} else {
+		ts.logger.Error("Invalid client type for device", nil, map[string]interface{}{
 			"device_id": manager.DeviceID,
 		})
-		manager.IsConnected = false
 		return
 	}
 
-	// Get energy usage
-	energyUsage, err := manager.Client.GetEnergyUsage()
-	if err != nil {
-		ts.logger.Error("Failed to get energy usage", err, map[string]interface{}{
-			"device_id": manager.DeviceID,
-		})
-		return
+	// Convert to energy reading (handle both device info types)
+	var reading *EnergyReading
+	if manager.UseKlap {
+		klapDeviceInfo := deviceInfo.(*tapo.KlapDeviceInfo)
+		klapEnergyUsage := energyUsage.(*tapo.KlapEnergyUsage)
+
+		reading = &EnergyReading{
+			DeviceID:       manager.DeviceID,
+			DeviceName:     manager.DeviceName,
+			RoomID:         manager.RoomID,
+			PowerW:         float64(klapEnergyUsage.CurrentPower) / 1000.0, // Convert mW to W
+			EnergyWh:       float64(klapEnergyUsage.TodayEnergy),
+			IsOn:           klapDeviceInfo.DeviceOn,
+			SignalStrength: float64(klapDeviceInfo.SignalLevel),
+			Timestamp:      time.Now(),
+		}
+	} else {
+		legacyDeviceInfo := deviceInfo.(*tapo.TapoDevice)
+		legacyEnergyUsage := energyUsage.(*tapo.EnergyUsage)
+
+		reading = &EnergyReading{
+			DeviceID:       manager.DeviceID,
+			DeviceName:     manager.DeviceName,
+			RoomID:         manager.RoomID,
+			PowerW:         float64(legacyEnergyUsage.CurrentPowerMw) / 1000.0, // Convert mW to W
+			EnergyWh:       float64(legacyEnergyUsage.TodayEnergyWh),
+			IsOn:           legacyDeviceInfo.IsOn,
+			SignalStrength: float64(legacyDeviceInfo.SignalLevel),
+			Timestamp:      time.Now(),
+		}
 	}
 
-	// Convert to InfluxDB reading
-	reading := &influxdb.EnergyReading{
-		DeviceID:       manager.DeviceID,
-		DeviceName:     manager.DeviceName,
-		RoomID:         manager.RoomID,
-		PowerW:         float64(energyUsage.CurrentPowerMw) / 1000.0, // Convert mW to W
-		EnergyWh:       float64(energyUsage.TodayEnergyWh),
-		IsOn:           deviceInfo.IsOn,
-		SignalStrength: deviceInfo.SignalLevel,
-		Timestamp:      time.Now(),
-	}
-
-	// Store in InfluxDB
-	if ts.influxClient != nil && ts.influxClient.IsConnected() {
-		if err := ts.influxClient.WriteEnergyReading(reading); err != nil {
-			ts.logger.Error("Failed to write energy reading to InfluxDB", err, map[string]interface{}{
+	// Store in time series database
+	if ts.tsClient != nil {
+		if err := ts.tsClient.WriteEnergyReading(nil, reading.DeviceID, reading.RoomID,
+			reading.PowerW, reading.EnergyWh, 0, 0, reading.IsOn, reading.Timestamp); err != nil {
+			ts.logger.Error("Failed to write energy reading to time series database", err, map[string]interface{}{
 				"device_id": manager.DeviceID,
 			})
 		}
@@ -291,15 +376,33 @@ func (ts *TapoService) SetDeviceState(deviceID string, on bool) error {
 	}
 
 	if !manager.IsConnected {
-		if err := manager.Client.Connect(); err != nil {
-			return errors.NewDeviceError("Failed to connect to device", err)
+		if manager.UseKlap && manager.KlapClient != nil {
+			ctx := context.Background()
+			if err := manager.KlapClient.Connect(ctx); err != nil {
+				return errors.NewDeviceError("Failed to connect to device via KLAP", err)
+			}
+		} else if client, ok := manager.Client.(*tapo.TapoClient); ok {
+			if err := client.Connect(); err != nil {
+				return errors.NewDeviceError("Failed to connect to device", err)
+			}
+		} else {
+			return errors.NewDeviceError("Invalid client type for device", nil)
 		}
 		manager.IsConnected = true
 	}
 
-	if err := manager.Client.SetDeviceOn(on); err != nil {
-		manager.IsConnected = false
-		return errors.NewDeviceError("Failed to set device state", err)
+	// Set device state based on client type
+	if manager.UseKlap && manager.KlapClient != nil {
+		// KLAP protocol doesn't have SetDeviceOn implemented yet
+		// For now, we'll return an error indicating this feature is not available
+		return errors.NewBusinessError("SetDeviceOn not implemented for KLAP protocol", nil)
+	} else if client, ok := manager.Client.(*tapo.TapoClient); ok {
+		if err := client.SetDeviceOn(on); err != nil {
+			manager.IsConnected = false
+			return errors.NewDeviceError("Failed to set device state", err)
+		}
+	} else {
+		return errors.NewDeviceError("Invalid client type for device", nil)
 	}
 
 	ts.logger.Info("Changed device state", map[string]interface{}{

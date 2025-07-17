@@ -11,12 +11,6 @@ timeout: 30s
 # - TPLINK_PASSWORD: Your TP-Link account password
 # - TPLINK_USERNAME: Your TP-Link account username (optional override)
 
-# InfluxDB settings (optional - uses environment variables if not specified)
-influxdb:
-  url: "http://localhost:8086"
-  token: "home-automation-token"
-  org: "home-automation"
-  bucket: "sensor-data"
 
 # MQTT settings (optional - uses environment variables if not specified)
 mqtt:
