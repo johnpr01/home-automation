@@ -63,7 +63,10 @@ func TestAddLightCallback(t *testing.T) {
 		DeviceID:   "pico-living-room",
 	}
 
-	payload, _ := json.Marshal(lightMsg)
+	payload, err := json.Marshal(lightMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 	err := service.handleLightMessage("room-light/living-room", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -115,7 +118,10 @@ func TestGetRoomLightLevel(t *testing.T) {
 		DeviceID:   "pico-bedroom",
 	}
 
-	payload, _ := json.Marshal(lightMsg)
+	payload, err := json.Marshal(lightMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 	service.handleLightMessage("room-light/bedroom", payload)
 
 	// Test existing room
@@ -175,7 +181,10 @@ func TestGetAllLightLevels(t *testing.T) {
 			DeviceID:   "pico-" + room.name,
 		}
 
-		payload, _ := json.Marshal(lightMsg)
+		payload, err := json.Marshal(lightMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 		service.handleLightMessage("room-light/"+room.name, payload)
 	}
 
@@ -216,7 +225,10 @@ func TestHandleLightMessage(t *testing.T) {
 		DeviceID:   "pico-office",
 	}
 
-	payload, _ := json.Marshal(lightMsg)
+	payload, err := json.Marshal(lightMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 	err := service.handleLightMessage("room-light/office", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -290,7 +302,10 @@ func TestLightServiceSummary(t *testing.T) {
 			DeviceID:   "pico-" + room.name,
 		}
 
-		payload, _ := json.Marshal(lightMsg)
+		payload, err := json.Marshal(lightMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 		service.handleLightMessage("room-light/"+room.name, payload)
 	}
 
@@ -353,7 +368,10 @@ func TestLightStates(t *testing.T) {
 			DeviceID:   "pico-" + roomID,
 		}
 
-		payload, _ := json.Marshal(lightMsg)
+		payload, err := json.Marshal(lightMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 		service.handleLightMessage("room-light/"+roomID, payload)
 
 		lightData, exists := service.GetRoomLightLevel(roomID)
@@ -428,7 +446,10 @@ func TestConcurrentLightUpdates(t *testing.T) {
 					DeviceID:   "pico-" + roomID,
 				}
 
-				payload, _ := json.Marshal(lightMsg)
+				payload, err := json.Marshal(lightMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 				service.handleLightMessage("room-light/"+roomID, payload)
 			}
 		}(i)
@@ -463,7 +484,10 @@ func TestDeviceOnlineStatusLight(t *testing.T) {
 		DeviceID:   "pico-online-test",
 	}
 
-	payload, _ := json.Marshal(lightMsg)
+	payload, err := json.Marshal(lightMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 	service.handleLightMessage("room-light/online-test", payload)
 
 	// Check device is marked online
