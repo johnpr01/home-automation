@@ -87,7 +87,7 @@ func (has *HomeAutomationSystem) initializeServices() error {
 	// Create custom logger for thermostat service
 	kafkaClient := kafka.NewClient([]string{"localhost:9092"}, "thermostat-logs", nil)
 	customLogger := logger.NewLogger("ThermostatService", kafkaClient)
-	
+
 	// Initialize thermostat service
 	has.thermostatService = services.NewThermostatService(has.mqttClient, customLogger)
 

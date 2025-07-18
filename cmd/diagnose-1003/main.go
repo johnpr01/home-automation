@@ -106,7 +106,7 @@ func main() {
 		fmt.Println("\n3️⃣ Testing KLAP Protocol as alternative...")
 		testLogger2 := logger.NewLogger("diagnose", nil)
 		klapClient := tapo.NewKlapClient(*ip, *username, *password, 30*time.Second, *testLogger2)
-		
+
 		ctx := context.Background()
 		err := klapClient.Connect(ctx)
 		if err != nil {

@@ -3,8 +3,6 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -49,13 +47,13 @@ func (m *MockMQTTClient) SimulateMessage(topic string, payload []byte) error {
 }
 
 func TestNewThermostatService(t *testing.T) {
-	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
+	testLogger := logger.NewLogger("thermostat-test", nil)
 
 	// Create MQTT client wrapper
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
 	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
-	service := NewThermostatService(mqttClient, logger)
+	service := NewThermostatService(mqttClient, testLogger)
 
 	if service == nil {
 		t.Fatal("Expected service to be created")
@@ -65,17 +63,17 @@ func TestNewThermostatService(t *testing.T) {
 		t.Error("Expected thermostats map to be initialized")
 	}
 
-	if service.logger != logger {
+	if service.logger != testLogger {
 		t.Error("Expected logger to be set")
 	}
 }
 
 func TestHandleTemperatureUpdate(t *testing.T) {
-	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
+	testLogger := logger.NewLogger("thermostat-test", nil)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
 	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
-	service := NewThermostatService(mqttClient, logger)
+	service := NewThermostatService(mqttClient, testLogger)
 
 	// Test creating new thermostat for room
 	roomID := "living-room"
@@ -112,11 +110,11 @@ func TestHandleTemperatureUpdate(t *testing.T) {
 }
 
 func TestRegisterThermostat(t *testing.T) {
-	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
+	testLogger := logger.NewLogger("thermostat-test", nil)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
 	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
-	service := NewThermostatService(mqttClient, logger)
+	service := NewThermostatService(mqttClient, testLogger)
 
 	thermostat := &models.Thermostat{
 		ID:         "test-thermostat",
@@ -153,11 +151,11 @@ func TestRegisterThermostat(t *testing.T) {
 }
 
 func TestSetTargetTemperature(t *testing.T) {
-	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
+	testLogger := logger.NewLogger("thermostat-test", nil)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
 	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
-	service := NewThermostatService(mqttClient, logger)
+	service := NewThermostatService(mqttClient, testLogger)
 
 	// Register a thermostat first
 	thermostat := &models.Thermostat{
@@ -199,11 +197,11 @@ func TestSetTargetTemperature(t *testing.T) {
 }
 
 func TestSetMode(t *testing.T) {
-	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
+	testLogger := logger.NewLogger("thermostat-test", nil)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
 	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
-	service := NewThermostatService(mqttClient, logger)
+	service := NewThermostatService(mqttClient, testLogger)
 
 	// Register a thermostat first
 	thermostat := &models.Thermostat{
@@ -241,11 +239,11 @@ func TestSetMode(t *testing.T) {
 }
 
 func TestGetAllThermostats(t *testing.T) {
-	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
+	testLogger := logger.NewLogger("thermostat-test", nil)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
 	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
-	service := NewThermostatService(mqttClient, logger)
+	service := NewThermostatService(mqttClient, testLogger)
 
 	// Initially should be empty
 	thermostats := service.GetAllThermostats()
@@ -277,11 +275,11 @@ func TestGetAllThermostats(t *testing.T) {
 }
 
 func TestHandleTemperatureMessage(t *testing.T) {
-	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
+	testLogger := logger.NewLogger("thermostat-test", nil)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
 	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
-	service := NewThermostatService(mqttClient, logger)
+	service := NewThermostatService(mqttClient, testLogger)
 
 	// Create a temperature message
 	tempData := map[string]interface{}{
@@ -312,11 +310,11 @@ func TestHandleTemperatureMessage(t *testing.T) {
 }
 
 func TestProcessThermostat(t *testing.T) {
-	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
+	testLogger := logger.NewLogger("thermostat-test", nil)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
 	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
-	service := NewThermostatService(mqttClient, logger)
+	service := NewThermostatService(mqttClient, testLogger)
 
 	// Test heating scenario
 	thermostat := &models.Thermostat{
@@ -364,11 +362,11 @@ func TestProcessThermostat(t *testing.T) {
 }
 
 func TestGetRoomTemperature(t *testing.T) {
-	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
+	testLogger := logger.NewLogger("thermostat-test", nil)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
 	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
-	service := NewThermostatService(mqttClient, logger)
+	service := NewThermostatService(mqttClient, testLogger)
 
 	// Test room with no thermostat
 	_, err := service.GetRoomTemperature("non-existent")
@@ -396,11 +394,11 @@ func TestGetRoomTemperature(t *testing.T) {
 }
 
 func TestConcurrentAccess(t *testing.T) {
-	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
+	testLogger := logger.NewLogger("thermostat-test", nil)
 	mqttConfig := &config.MQTTConfig{Broker: "localhost", Port: "1883"}
 	mqttClient := mqtt.NewClient(mqttConfig, nil)
 
-	service := NewThermostatService(mqttClient, logger)
+	service := NewThermostatService(mqttClient, testLogger)
 
 	// Test concurrent temperature updates
 	done := make(chan bool, 10)
