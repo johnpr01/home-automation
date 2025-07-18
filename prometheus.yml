@@ -1,0 +1,48 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "rules/*.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'home-automation'
+    static_configs:
+      - targets: ['home-automation:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'tapo-energy'
+    static_configs:
+      - targets: ['home-automation:8080']
+    metrics_path: '/metrics/tapo'
+    scrape_interval: 30s
+
+  - job_name: 'tapo-metrics'
+    static_configs:
+      - targets: ['tapo-metrics:2112']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    honor_labels: true
+
+  - job_name: 'tapo-test-server'
+    static_configs:
+      - targets: ['host.docker.internal:2112']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'system-metrics'
+    static_configs:
+      - targets: ['home-automation:8080']
+    metrics_path: '/metrics/system'
+    scrape_interval: 60s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []

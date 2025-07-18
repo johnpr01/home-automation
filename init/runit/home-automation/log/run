@@ -1,0 +1,4 @@
+#!/bin/sh
+# Home Automation System - Runit log script
+
+exec svlogd -tt /var/log/home-automation

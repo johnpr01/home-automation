@@ -1,0 +1,20 @@
+#!/bin/sh
+# Home Automation System (Standalone) - Runit run script
+
+# Change to working directory
+cd /opt/home-automation || exit 1
+
+# Source environment files
+[ -r /etc/default/home-automation ] && . /etc/default/home-automation
+[ -r .env ] && . .env
+
+# Set environment
+export HOME=/opt/home-automation
+export LOG_LEVEL=${LOG_LEVEL:-info}
+
+# Create necessary directories
+mkdir -p data logs
+chown pi:pi data logs
+
+# Execute as pi user
+exec chpst -u pi:pi ./bin/home-automation-server

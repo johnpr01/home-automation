@@ -1,0 +1,62 @@
+#!/bin/bash
+set -e
+
+echo "🚀 Configuring home-automation standalone system..."
+
+# Set ownership and permissions
+echo "🔐 Setting file permissions..."
+chown -R pi:pi /opt/home-automation
+chmod 755 /opt/home-automation
+chmod 644 /opt/home-automation/.env.example
+
+# Build the Go binary
+echo "🔨 Building Go application..."
+cd /opt/home-automation
+
+if command -v go >/dev/null 2>&1; then
+    # Create bin directory
+    mkdir -p bin
+    chown pi:pi bin
+    
+    # Build main server
+    sudo -u pi go build -o bin/home-automation-server ./cmd/server
+    
+    # Build utilities
+    sudo -u pi go build -o bin/tapo-demo ./cmd/tapo-demo
+    sudo -u pi go build -o bin/test-klap ./cmd/test-klap
+    
+    chmod +x bin/*
+    echo "✅ Go binaries built successfully"
+else
+    echo "❌ Go compiler not found!"
+    echo "   Install with: sudo apt install golang-go"
+    exit 1
+fi
+
+# Create log directory
+mkdir -p /var/log/home-automation
+chown pi:pi /var/log/home-automation
+chmod 755 /var/log/home-automation
+
+# Reload systemd
+echo "🔄 Reloading systemd configuration..."
+systemctl daemon-reload
+systemctl enable home-automation.service
+
+echo ""
+echo "🎉 Home Automation Standalone System installed successfully!"
+echo ""
+echo "📋 Next Steps:"
+echo "1. Configure environment: sudo -u pi nano /opt/home-automation/.env"
+echo "2. Start service: sudo systemctl start home-automation"
+echo "3. Check status: sudo systemctl status home-automation"
+echo ""
+echo "📊 Management Commands:"
+echo "   home-automation-status   - Check system status"
+echo "   home-automation-logs     - View service logs"  
+echo "   home-automation-restart  - Restart service"
+echo "   home-automation-update   - Update configuration"
+echo ""
+echo "📖 Documentation: /opt/home-automation/README.md"
+
+exit 0

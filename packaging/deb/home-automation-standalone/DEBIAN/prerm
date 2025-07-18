@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+# Pre-removal script for home-automation package
+
+case "$1" in
+    remove|upgrade|deconfigure)
+        echo "🛑 Stopping home-automation services..."
+        
+        # Stop the service if it's running
+        if systemctl is-active home-automation >/dev/null 2>&1; then
+            systemctl stop home-automation
+        fi
+        
+        # Disable the service
+        if systemctl is-enabled home-automation >/dev/null 2>&1; then
+            systemctl disable home-automation
+        fi
+        
+        echo "✅ Services stopped and disabled"
+        ;;
+    failed-upgrade)
+        echo "⚠️  Package upgrade failed, leaving services as-is"
+        ;;
+    *)
+        echo "prerm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

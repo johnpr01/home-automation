@@ -1,0 +1,64 @@
+#!/bin/bash
+set -e
+
+# Pre-installation script for home-automation package
+
+echo "🔧 Preparing home-automation installation..."
+
+# Check if running on Raspberry Pi
+if ! grep -q "Raspberry Pi" /proc/cpuinfo 2>/dev/null && ! grep -q "BCM" /proc/cpuinfo 2>/dev/null; then
+    echo "⚠️  Warning: This package is optimized for Raspberry Pi hardware"
+    echo "   Installation will continue but some features may not work optimally"
+fi
+
+# Check architecture
+ARCH=$(dpkg --print-architecture)
+if [ "$ARCH" != "arm64" ] && [ "$ARCH" != "armhf" ]; then
+    echo "⚠️  Warning: Unsupported architecture: $ARCH"
+    echo "   This package is designed for ARM-based Raspberry Pi systems"
+fi
+
+# Check available disk space (need at least 2GB)
+AVAILABLE_KB=$(df /opt | tail -1 | awk '{print $4}')
+REQUIRED_KB=$((2 * 1024 * 1024))  # 2GB in KB
+
+if [ "$AVAILABLE_KB" -lt "$REQUIRED_KB" ]; then
+    echo "❌ Insufficient disk space in /opt"
+    echo "   Required: 2GB, Available: $((AVAILABLE_KB / 1024 / 1024))GB"
+    exit 1
+fi
+
+# Check if Docker is available
+if ! command -v docker >/dev/null 2>&1; then
+    echo "📦 Docker not found - will be installed as dependency"
+fi
+
+# Check system memory (recommend at least 2GB)
+TOTAL_MEM_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+RECOMMENDED_MEM_KB=$((2 * 1024 * 1024))  # 2GB in KB
+
+if [ "$TOTAL_MEM_KB" -lt "$RECOMMENDED_MEM_KB" ]; then
+    echo "⚠️  Warning: Low system memory detected"
+    echo "   Recommended: 2GB, Available: $((TOTAL_MEM_KB / 1024 / 1024))GB"
+    echo "   Consider enabling swap or reducing Docker container resource limits"
+fi
+
+# Create home-automation user if it doesn't exist
+if ! id "pi" >/dev/null 2>&1; then
+    echo "👤 Creating 'pi' user for home-automation services..."
+    useradd -r -s /bin/false -d /opt/home-automation -c "Home Automation Service" pi
+fi
+
+# Add pi user to docker group (will be created by docker package)
+echo "🔐 Configuring user permissions..."
+
+# Create docker group if it doesn't exist
+if ! getent group docker >/dev/null; then
+    groupadd docker
+fi
+
+# Add pi user to docker group
+usermod -aG docker pi
+
+echo "✅ Pre-installation checks completed"
+exit 0

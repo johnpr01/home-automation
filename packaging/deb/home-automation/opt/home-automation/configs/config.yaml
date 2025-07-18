@@ -1,0 +1,77 @@
+server:
+  port: "8080"
+  host: "0.0.0.0"
+  read_timeout: "30s"
+  write_timeout: "30s"
+  idle_timeout: "60s"
+
+database:
+  type: "sqlite"
+  path: "home_automation.db"
+  # For PostgreSQL:
+  # type: "postgres"
+  # host: "localhost"
+  # port: "5432"
+  # name: "home_automation"
+  # username: "admin"
+  # password: "password"
+
+mqtt:
+  broker: "localhost"
+  port: "1883"
+  client_id: "home-automation-server"
+  username: ""
+  password: ""
+  keep_alive: 60
+  topics:
+    device_commands: "homeautomation/devices/+/commands"
+    device_status: "homeautomation/devices/+/status"
+    sensor_readings: "homeautomation/sensors/+/readings"
+
+kafka:
+  brokers: ["localhost:9092"]
+  log_topic: "home-automation-logs"
+  client_id: "home-automation-logger"
+  batch_size: 100
+  timeout: "5s"
+
+devices:
+  discovery:
+    enabled: true
+    interval: "5m"
+  auto_configure: true
+  default_timeout: "30s"
+
+sensors:
+  reading_interval: "1m"
+  history_retention: "30d"
+  alert_thresholds:
+    temperature:
+      min: 15.0
+      max: 30.0
+    humidity:
+      min: 30.0
+      max: 70.0
+
+logging:
+  level: "info"
+  format: "json"
+  output: "stdout"
+  file: "logs/home-automation.log"
+
+security:
+  enable_auth: false
+  jwt_secret: "your-secret-key-here"
+  token_expiry: "24h"
+  cors:
+    enabled: true
+    origins: ["*"]
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    headers: ["*"]
+
+features:
+  web_ui: true
+  api: true
+  mqtt: true
+  automation_rules: true
+  scheduling: true

@@ -1,0 +1,31 @@
+[Unit]
+Description=Home Automation System (Development)
+Documentation=https://github.com/johnpr01/home-automation
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/opt/home-automation/src
+ExecStartPre=/usr/bin/go mod download
+ExecStart=/usr/bin/go run cmd/server/main.go
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=120
+TimeoutStopSec=30
+
+# Development environment
+Environment=ENV=development
+Environment=LOG_LEVEL=debug
+Environment=HOT_RELOAD=true
+EnvironmentFile=-/opt/home-automation/.env.dev
+EnvironmentFile=-/etc/default/home-automation-dev
+
+# Less restrictive security for development
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

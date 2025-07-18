@@ -27,7 +27,7 @@
 ### Documentation Updates
 - ✅ Main README updated with error handling and flashing references
 - ✅ ERROR_HANDLING.md - Comprehensive error handling guide
-- ✅ ERROR_HANDLING_SUMMARY.md - Migration status tracker
+- ✅ chats/ERROR_HANDLING_SUMMARY.md - Migration status tracker
 - ✅ SECURITY_SCANNERS.md - Security scanning options
 
 ## 🔄 In Progress / Known Issues

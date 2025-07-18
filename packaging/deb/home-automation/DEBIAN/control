@@ -1,0 +1,28 @@
+Package: home-automation
+Version: 1.0.0-ff92c40-dirty
+Section: utils
+Priority: optional
+Architecture: arm64
+Essential: no
+Depends: docker.io (>= 20.10.0), docker-compose-plugin (>= 2.0.0), curl, wget, systemd
+Recommends: prometheus, grafana
+Suggests: mosquitto-clients
+Installed-Size: 50000
+Maintainer: Home Automation Team <admin@home-automation.local>
+Description: Smart Home Automation System for Raspberry Pi
+ A comprehensive home automation system featuring:
+ .
+ * MQTT and Kafka message processing
+ * TP-Link Tapo smart plug monitoring with KLAP protocol support
+ * Prometheus metrics collection and Grafana dashboards
+ * Multi-sensor support (temperature, humidity, motion, light)
+ * Docker Compose orchestration
+ * Raspberry Pi Pico WH firmware for wireless sensors
+ * Energy monitoring and time-series visualization
+ * Software Bill of Materials (SBOM) for security and compliance
+ .
+ This package installs the complete home automation stack with
+ automatic service management, configuration templates, and
+ comprehensive documentation. Includes SPDX and CycloneDX format
+ SBOMs for vulnerability scanning and compliance requirements.
+Homepage: https://github.com/johnpr01/home-automation

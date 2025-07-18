@@ -1,0 +1,72 @@
+# Mosquitto ACL (Access Control List) Example
+# This file controls topic-level permissions for MQTT clients
+
+# Syntax:
+# user <username>     - Define permissions for a specific user
+# topic [read|write|readwrite] <topic>  - Set topic permissions
+# pattern [read|write|readwrite] <pattern> - Set pattern permissions
+# %c = client ID, %u = username
+
+# Default: Deny all unless explicitly allowed
+# (This is the default behavior when ACL is enabled)
+
+# ===========================================
+# Home Automation Server (Full Access)
+# ===========================================
+user home-automation-server
+topic readwrite #
+
+# ===========================================  
+# Pi Pico Sensors (Write sensor data only)
+# ===========================================
+# Each sensor can only write to its own room topics
+# %c represents the client ID (e.g., "pico-sht30-room1")
+
+user pico-sht30-room1
+topic write room-temp/1
+topic write room-hum/1
+
+user pico-sht30-room2  
+topic write room-temp/2
+topic write room-hum/2
+
+user pico-sht30-room3
+topic write room-temp/3
+topic write room-hum/3
+
+# ===========================================
+# Web Dashboard (Read sensor data)  
+# ===========================================
+user webclient
+topic read room-temp/+
+topic read room-hum/+ 
+topic read $SYS/broker/clients/connected
+topic read $SYS/broker/messages/+
+
+# ===========================================
+# Admin User (Full Access)
+# ===========================================
+user admin
+topic readwrite #
+
+# ===========================================
+# Guest Users (Limited Read Access)
+# ===========================================  
+user guest
+topic read room-temp/living-room
+topic read room-temp/kitchen
+topic read room-hum/living-room
+topic read room-hum/kitchen
+
+# ===========================================
+# Pattern-based Rules (Alternative approach)
+# ===========================================
+# Allow any pico device to write to its assigned room
+# pattern write room-temp/%u
+# pattern write room-hum/%u
+
+# Allow monitoring clients to read all sensor data
+# user monitoring
+# topic read room-temp/+
+# topic read room-hum/+
+# topic read $SYS/#

@@ -1,0 +1,34 @@
+[Unit]
+Description=Home Automation System
+Documentation=https://github.com/johnpr01/home-automation
+After=network.target docker.service
+Wants=network.target
+Requires=docker.service
+
+[Service]
+Type=exec
+User=pi
+Group=pi
+WorkingDirectory=/opt/home-automation
+ExecStartPre=/usr/bin/docker compose -f docker-compose.yml pull --quiet
+ExecStart=/usr/bin/docker compose -f docker-compose.yml up
+ExecStop=/usr/bin/docker compose -f docker-compose.yml down
+ExecReload=/usr/bin/docker compose -f docker-compose.yml restart
+Restart=always
+RestartSec=10
+TimeoutStartSec=300
+TimeoutStopSec=30
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/home-automation
+
+# Environment
+Environment=COMPOSE_PROJECT_NAME=home-automation
+EnvironmentFile=-/opt/home-automation/.env
+
+[Install]
+WantedBy=multi-user.target

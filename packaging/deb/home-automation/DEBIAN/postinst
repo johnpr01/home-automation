@@ -1,0 +1,149 @@
+#!/bin/bash
+set -e
+
+# Post-installation script for home-automation package
+
+echo "🚀 Configuring home-automation system..."
+
+# Set ownership and permissions
+echo "🔐 Setting file permissions..."
+chown -R pi:pi /opt/home-automation
+chmod 755 /opt/home-automation
+chmod 644 /opt/home-automation/.env.example
+chmod 755 /opt/home-automation/deployments
+chmod 644 /opt/home-automation/deployments/*
+chmod +x /usr/local/bin/home-automation-*
+
+# Set secure permissions for sensitive files
+if [ -f /opt/home-automation/.env ]; then
+    chmod 640 /opt/home-automation/.env
+    chown pi:pi /opt/home-automation/.env
+fi
+
+# Create log directory
+mkdir -p /var/log/home-automation
+chown pi:pi /var/log/home-automation
+chmod 755 /var/log/home-automation
+
+# Create data directories
+mkdir -p /opt/home-automation/data/{prometheus,grafana,kafka-logs}
+chown -R pi:pi /opt/home-automation/data
+chmod 755 /opt/home-automation/data/*
+
+# Reload systemd to pick up new service files
+echo "🔄 Reloading systemd configuration..."
+systemctl daemon-reload
+
+# Enable but don't start the service yet (user needs to configure first)
+echo "📋 Enabling home-automation service..."
+systemctl enable home-automation.service
+
+# Configure Docker daemon for better resource management on Pi
+echo "🐳 Optimizing Docker configuration for Raspberry Pi..."
+DOCKER_DAEMON_JSON="/etc/docker/daemon.json"
+
+if [ ! -f "$DOCKER_DAEMON_JSON" ]; then
+    cat > "$DOCKER_DAEMON_JSON" << EOF
+{
+  "log-driver": "journald",
+  "log-opts": {
+    "max-size": "100m",
+    "max-file": "3"
+  },
+  "storage-driver": "overlay2",
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "default-ulimits": {
+    "memlock": {
+      "Hard": -1,
+      "Name": "memlock",
+      "Soft": -1
+    }
+  }
+}
+EOF
+    
+    echo "🔄 Restarting Docker with optimized configuration..."
+    systemctl restart docker
+fi
+
+# Create firmware upload helper script
+cat > /usr/local/bin/upload-pico-firmware << 'EOF'
+#!/bin/bash
+# Upload firmware to Raspberry Pi Pico WH
+
+FIRMWARE_DIR="/opt/home-automation/firmware/pico-sht30"
+
+if [ ! -d "$FIRMWARE_DIR" ]; then
+    echo "❌ Firmware directory not found: $FIRMWARE_DIR"
+    exit 1
+fi
+
+cd "$FIRMWARE_DIR"
+
+echo "🔍 Checking for Pico connection..."
+if ! command -v mpremote >/dev/null 2>&1; then
+    echo "📦 Installing mpremote..."
+    pip3 install mpremote
+fi
+
+if ! mpremote ls >/dev/null 2>&1; then
+    echo "❌ Cannot connect to Pico. Please:"
+    echo "   1. Connect Pico via USB"
+    echo "   2. Ensure MicroPython is installed"
+    echo "   3. Check no other programs are using the serial port"
+    exit 1
+fi
+
+echo "✅ Pico connected"
+echo "📤 Uploading firmware files..."
+
+# Create config if it doesn't exist
+if [ ! -f config.py ]; then
+    cp config_template.py config.py
+    echo "📝 Created config.py from template"
+    echo "   Please edit /opt/home-automation/firmware/pico-sht30/config.py"
+    echo "   with your WiFi and MQTT settings before running the upload again."
+    exit 0
+fi
+
+# Upload files
+mpremote cp config.py :config.py
+mpremote cp main.py :main.py
+mpremote cp sht30.py :sht30.py
+
+echo "✅ Firmware uploaded successfully"
+echo "🔍 Testing connection..."
+timeout 10s mpremote run main.py || echo "⚠️  Upload complete, test run timed out (normal)"
+
+echo ""
+echo "📊 To monitor Pico output: mpremote"
+echo "🔧 To reconfigure: edit /opt/home-automation/firmware/pico-sht30/config.py"
+EOF
+
+chmod +x /usr/local/bin/upload-pico-firmware
+
+# Display post-installation instructions
+echo ""
+echo "🎉 Home Automation System installed successfully!"
+echo ""
+echo "📋 Next Steps:"
+echo "1. Configure environment: sudo -u pi nano /opt/home-automation/.env"
+echo "2. Start services: sudo systemctl start home-automation"
+echo "3. Check status: sudo systemctl status home-automation"
+echo "4. Upload Pico firmware: upload-pico-firmware"
+echo ""
+echo "📊 Management Commands:"
+echo "   home-automation-status   - Check system status"
+echo "   home-automation-logs     - View service logs"  
+echo "   home-automation-restart  - Restart services"
+echo "   home-automation-update   - Update configuration"
+echo ""
+echo "🌐 Web Interfaces (after starting services):"
+echo "   Grafana: http://$(hostname -I | awk '{print $1}'):3000"
+echo "   Prometheus: http://$(hostname -I | awk '{print $1}'):9090"
+echo ""
+echo "📖 Documentation: /opt/home-automation/README.md"
+echo "🛠️  Configuration: /opt/home-automation/.env"
+echo ""
+
+exit 0

@@ -1,0 +1,38 @@
+[Unit]
+Description=Tapo Metrics Scraper
+Documentation=https://github.com/johnpr01/home-automation
+After=network.target
+Wants=network.target
+
+[Service]
+Type=exec
+User=pi
+Group=pi
+WorkingDirectory=/opt/home-automation
+ExecStart=/opt/home-automation/bin/tapo-metrics-scraper
+Restart=always
+RestartSec=15
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/home-automation/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Network access required for Tapo devices
+PrivateNetwork=false
+
+# Environment
+Environment=METRICS_PORT=2112
+Environment=LOG_LEVEL=info
+EnvironmentFile=-/opt/home-automation/.env
+EnvironmentFile=-/etc/default/tapo-metrics
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,20 @@
+#!/bin/sh
+# Tapo Metrics Scraper - Runit run script
+
+# Change to working directory
+cd /opt/home-automation || exit 1
+
+# Source environment files
+[ -r /etc/default/tapo-metrics ] && . /etc/default/tapo-metrics
+[ -r .env ] && . .env
+
+# Set environment
+export METRICS_PORT=${METRICS_PORT:-2112}
+export LOG_LEVEL=${LOG_LEVEL:-info}
+
+# Create data directory
+mkdir -p data
+chown pi:pi data
+
+# Execute as pi user
+exec chpst -u pi:pi ./bin/tapo-metrics-scraper

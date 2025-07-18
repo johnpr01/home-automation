@@ -1,0 +1,26 @@
+Package: home-automation-standalone
+Version: 1.0.0-ff92c40-dirty
+Section: utils
+Priority: optional
+Architecture: arm64
+Essential: no
+Depends: golang-go (>= 1.19), curl, wget, systemd
+Recommends: mosquitto, prometheus, grafana
+Suggests: docker.io
+Installed-Size: 30000
+Maintainer: Home Automation Team <admin@home-automation.local>
+Description: Smart Home Automation System (Standalone)
+ A lightweight home automation system that runs without Docker:
+ .
+ * Direct Go binary execution
+ * MQTT message processing
+ * TP-Link Tapo smart plug monitoring with KLAP protocol support
+ * Prometheus metrics export
+ * Multi-sensor support (temperature, humidity, motion, light)
+ * Raspberry Pi Pico WH firmware for wireless sensors
+ * Energy monitoring and data collection
+ .
+ This standalone package runs the Go binary directly without
+ Docker containers, providing a lighter footprint for
+ resource-constrained environments.
+Homepage: https://github.com/johnpr01/home-automation

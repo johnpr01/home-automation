@@ -1,0 +1,49 @@
+#!/bin/bash
+set -e
+
+# Post-removal script for home-automation package
+
+case "$1" in
+    purge)
+        echo "🧹 Purging home-automation configuration and data..."
+        
+        # Remove configuration files
+        rm -rf /opt/home-automation
+        
+        # Remove log files
+        rm -rf /var/log/home-automation
+        
+        # Remove user account if it exists and has no other processes
+        if id "pi" >/dev/null 2>&1; then
+            # Check if user has any running processes
+            if ! pgrep -u pi >/dev/null 2>&1; then
+                echo "👤 Removing pi user account..."
+                userdel pi 2>/dev/null || true
+            else
+                echo "⚠️  Keeping pi user (has running processes)"
+            fi
+        fi
+        
+        # Remove systemd service files
+        rm -f /etc/systemd/system/home-automation.service
+        
+        # Reload systemd
+        systemctl daemon-reload
+        
+        echo "✅ Complete removal finished"
+        ;;
+        
+    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        echo "📦 Keeping configuration files for potential reinstall"
+        # Remove systemd service files but keep data
+        rm -f /etc/systemd/system/home-automation.service
+        systemctl daemon-reload
+        ;;
+        
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

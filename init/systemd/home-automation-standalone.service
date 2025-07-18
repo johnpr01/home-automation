@@ -1,0 +1,40 @@
+[Unit]
+Description=Home Automation System (Standalone)
+Documentation=https://github.com/johnpr01/home-automation
+After=network.target
+Wants=network.target
+
+[Service]
+Type=exec
+User=pi
+Group=pi
+WorkingDirectory=/opt/home-automation
+ExecStart=/opt/home-automation/bin/home-automation-server
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/home-automation/data /opt/home-automation/logs
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Environment
+Environment=HOME=/opt/home-automation
+Environment=LOG_LEVEL=info
+EnvironmentFile=-/opt/home-automation/.env
+EnvironmentFile=-/etc/default/home-automation
+
+[Install]
+WantedBy=multi-user.target

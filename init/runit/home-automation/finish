@@ -1,0 +1,7 @@
+#!/bin/sh
+# Home Automation System - Runit finish script
+
+# Cleanup on exit
+cd /opt/home-automation 2>/dev/null && docker compose down 2>/dev/null || true
+
+exit 0

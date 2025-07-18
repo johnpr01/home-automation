@@ -1,0 +1,75 @@
+# Tapo Smart Plug Configuration
+# Copy this file to configs/tapo.yml and update with your device details
+
+# Global settings
+poll_interval: 30s
+retry_attempts: 3
+timeout: 30s
+
+# Environment Variables Support:
+# You can use environment variables for sensitive data:
+# - TPLINK_PASSWORD: Your TP-Link account password
+# - TPLINK_USERNAME: Your TP-Link account username (optional override)
+
+
+# MQTT settings (optional - uses environment variables if not specified)
+mqtt:
+  broker: "localhost"
+  port: 1883
+  username: ""
+  password: ""
+
+# Tapo device configurations
+devices:
+  - device_id: "tapo_living_room_1"
+    device_name: "Living Room Lamp"
+    room_id: "living_room"
+    ip_address: "192.168.1.100"  # Replace with your device IP
+    username: "your_tapo_username"  # Replace with your Tapo account username or use ${TPLINK_USERNAME}
+    password: "${TPLINK_PASSWORD}"  # Uses environment variable for security
+    poll_interval: 30s
+    
+  - device_id: "tapo_kitchen_1"
+    device_name: "Kitchen Coffee Maker"
+    room_id: "kitchen"
+    ip_address: "192.168.1.101"  # Replace with your device IP
+    username: "your_tapo_username"  # Replace with your Tapo account username or use ${TPLINK_USERNAME}
+    password: "${TPLINK_PASSWORD}"  # Uses environment variable for security
+    poll_interval: 30s
+    
+  - device_id: "tapo_office_1"
+    device_name: "Office Monitor"
+    room_id: "office"
+    ip_address: "192.168.1.102"  # Replace with your device IP
+    username: "your_tapo_username"  # Replace with your Tapo account username or use ${TPLINK_USERNAME}
+    password: "${TPLINK_PASSWORD}"  # Uses environment variable for security
+    poll_interval: 60s
+    
+  - device_id: "tapo_bedroom_1"
+    device_name: "Bedroom Air Purifier"
+    room_id: "bedroom"
+    ip_address: "192.168.1.103"  # Replace with your device IP
+    username: "your_tapo_username"  # Replace with your Tapo account username or use ${TPLINK_USERNAME}
+    password: "${TPLINK_PASSWORD}"  # Uses environment variable for security
+    poll_interval: 60s
+
+# Energy monitoring settings
+energy_monitoring:
+  enabled: true
+  alert_thresholds:
+    high_power_w: 1500  # Alert if device draws more than 1500W
+    daily_energy_kwh: 10  # Alert if daily consumption exceeds 10kWh
+  
+# Automation rules (optional)
+automation:
+  enabled: true
+  rules:
+    - name: "High power consumption alert"
+      condition: "power_w > 1000"
+      action: "mqtt_publish"
+      topic: "alerts/high_power"
+      
+    - name: "Device offline alert"
+      condition: "last_update > 5m"
+      action: "mqtt_publish"
+      topic: "alerts/device_offline"

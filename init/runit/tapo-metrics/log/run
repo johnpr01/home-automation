@@ -1,0 +1,4 @@
+#!/bin/sh
+# Tapo Metrics Scraper - Runit log script
+
+exec svlogd -tt /var/log/tapo-metrics
