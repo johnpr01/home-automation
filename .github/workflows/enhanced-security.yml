@@ -71,7 +71,7 @@ jobs:
         echo "📦 Running comprehensive dependency vulnerability scan..."
         
         echo "🔍 Scanning all dependencies with govulncheck..."
-        go list -json -deps ./... | nancy sleuth --skip-update-check
+        govulncheck -mode=module ./...
 
   static-analysis:
     name: Static Security Analysis
