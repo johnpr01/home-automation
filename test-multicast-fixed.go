@@ -124,10 +124,7 @@ func receiveMessages() {
 }
 
 func receiveMessagesWithChannel(ctx context.Context, msgChan chan<- string) {
-	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", MulticastPort))
-	if err != nil {
-		log.Fatal(err)
-	}
+// Removed unused addr variable declaration and its associated error handling.
 
 	conn, err := net.ListenMulticastUDP("udp", nil, &net.UDPAddr{
 		IP:   net.ParseIP(MulticastAddress),
