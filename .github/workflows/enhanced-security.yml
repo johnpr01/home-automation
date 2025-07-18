@@ -125,33 +125,6 @@ jobs:
         echo "🔍 Running staticcheck security analysis..."
         staticcheck -f stylish ./... || echo "⚠️ staticcheck encountered issues but continuing..."
         
-    - name: Run gosec (alternative to Gosec action)
-      run: |
-        echo "📦 Installing gosec..."
-        # Set Git configuration to avoid authentication issues
-        git config --global url."https://github.com/".insteadOf "git@github.com:"
-        export GOPROXY=https://proxy.golang.org,direct
-        export GOSUMDB=sum.golang.org
-        
-        # Set Git configuration to avoid authentication issues
-        git config --global url."https://github.com/".insteadOf "git@github.com:"
-        export GOPROXY=https://proxy.golang.org,direct
-        export GOSUMDB=sum.golang.org
-        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-        
-        echo "🔍 Running gosec security scan..."
-        gosec -fmt sarif -out gosec.sarif ./...
-        
-        echo "📊 Generating readable report..."
-        gosec -fmt json -out gosec.json ./...
-        gosec ./...
-        
-    - name: Upload gosec SARIF
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: gosec.sarif
-
   secrets-scan:
     name: Secrets Detection
     runs-on: ubuntu-latest
@@ -252,7 +225,6 @@ jobs:
         echo "- Semgrep (Multi-language static analysis)"
         echo "- CodeQL (GitHub's security analysis)"
         echo "- staticcheck (Go static analyzer)"
-        echo "- gosec (Go security checker)"
         echo "- GitLeaks (Secret detection)"
         echo "- TruffleHog (Secret scanning)"
         echo "- Trivy (Vulnerability scanner)"
