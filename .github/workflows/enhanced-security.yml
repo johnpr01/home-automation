@@ -71,7 +71,15 @@ jobs:
         echo "📦 Running comprehensive dependency vulnerability scan..."
         
         echo "🔍 Scanning all dependencies with govulncheck..."
-        govulncheck -scan=module ./...
+        govulncheck -scan=module .
+
+        echo "📋 Checking for outdated dependencies..."
+        go list -u -m all || true
+        
+        echo "🔒 Verifying go.sum integrity..."
+        go mod verify
+        
+        echo "✅ Dependency scan completed"
 
   static-analysis:
     name: Static Security Analysis
