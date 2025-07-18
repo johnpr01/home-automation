@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/johnpr01/home-automation/internal/config"
+	"github.com/johnpr01/home-automation/internal/logger"
 	"github.com/johnpr01/home-automation/internal/models"
 	"github.com/johnpr01/home-automation/pkg/mqtt"
 )

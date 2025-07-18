@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/johnpr01/home-automation/internal/logger"
 	"github.com/johnpr01/home-automation/pkg/tapo"
@@ -79,24 +81,22 @@ func main() {
 	// Test 2: Try KLAP Protocol
 	if *useKlap {
 		fmt.Println("2️⃣ Testing KLAP Protocol...")
-		klapClient, err := tapo.NewKlapClient(*ip, *username, *password)
-		if err != nil {
-			fmt.Printf("❌ KLAP client creation failed: %v\n", err)
-			return
-		}
+		testLogger := logger.NewLogger("diagnose", nil)
+		klapClient := tapo.NewKlapClient(*ip, *username, *password, 30*time.Second, *testLogger)
 
-		err = klapClient.Connect()
+		ctx := context.Background()
+		err := klapClient.Connect(ctx)
 		if err != nil {
 			fmt.Printf("❌ KLAP handshake failed: %v\n", err)
 		} else {
 			fmt.Println("✅ KLAP handshake successful!")
 
 			// Test device info
-			info, err := klapClient.GetDeviceInfo()
+			info, err := klapClient.GetDeviceInfo(ctx)
 			if err != nil {
 				fmt.Printf("❌ Get device info failed: %v\n", err)
 			} else {
-				fmt.Printf("✅ Device info: %s (Model: %s)\n", info.DeviceName, info.Model)
+				fmt.Printf("✅ Device info: %s (Model: %s)\n", info.Nickname, info.Model)
 			}
 		}
 	}
@@ -104,16 +104,15 @@ func main() {
 	// Test 3: Alternative protocol suggestion
 	if !*useKlap {
 		fmt.Println("\n3️⃣ Testing KLAP Protocol as alternative...")
-		klapClient, err := tapo.NewKlapClient(*ip, *username, *password)
+		testLogger2 := logger.NewLogger("diagnose", nil)
+		klapClient := tapo.NewKlapClient(*ip, *username, *password, 30*time.Second, *testLogger2)
+		
+		ctx := context.Background()
+		err := klapClient.Connect(ctx)
 		if err != nil {
-			fmt.Printf("❌ KLAP client creation failed: %v\n", err)
+			fmt.Printf("❌ KLAP also failed: %v\n", err)
 		} else {
-			err = klapClient.Connect()
-			if err != nil {
-				fmt.Printf("❌ KLAP also failed: %v\n", err)
-			} else {
-				fmt.Println("✅ KLAP works! Use -klap flag for this device")
-			}
+			fmt.Println("✅ KLAP works! Use -klap flag for this device")
 		}
 	}
 
