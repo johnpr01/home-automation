@@ -71,7 +71,7 @@ jobs:
         echo "📦 Running comprehensive dependency vulnerability scan..."
         
         echo "🔍 Scanning all dependencies with govulncheck..."
-        govulncheck ./...
+        govulncheck -scan=module .
 
         echo "📋 Checking for outdated dependencies..."
         go list -u -m all || true
