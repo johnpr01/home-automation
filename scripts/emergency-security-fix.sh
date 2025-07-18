@@ -599,6 +599,74 @@ chmod 600 .credentials-*.txt
 echo "   ✅ Created secure credentials file (600 permissions)"
 
 echo ""
+echo "🔧 Step 9: Emergency TLS Setup (if certificates exist)..."
+
+if [ -f "../certs/ca.crt" ] && [ -f "../certs/server.crt" ] && [ -f "../certs/server-key.pem" ]; then
+    echo "   🔐 TLS certificates found, enabling emergency TLS configuration..."
+    
+    # Add TLS environment variables to secure config
+    cat >> .env.secure << 'EOF'
+
+# Emergency TLS Configuration
+TLS_ENABLED=true
+MQTT_USE_TLS=true
+MQTT_PORT=8883
+MQTT_CA_FILE=/app/certs/ca.crt
+TLS_CERT_FILE=/app/certs/server.crt
+TLS_KEY_FILE=/app/certs/server-key.pem
+EOF
+
+    # Create minimal TLS docker-compose override
+    cat > docker-compose.tls-emergency.yml << 'EOF'
+# Emergency TLS Override - Minimal Configuration
+# Use with: docker-compose -f docker-compose.secure.yml -f docker-compose.tls-emergency.yml up -d
+
+services:
+  mosquitto:
+    ports:
+      - "8883:8883"    # MQTTS instead of standard MQTT
+    volumes:
+      - ./mosquitto/mosquitto.secure.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/passwd:/mosquitto/config/passwd
+      - ../certs:/mosquitto/certs:ro  # Mount TLS certificates
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+
+  home-automation:
+    environment:
+      - MQTT_PORT=8883                    # Use TLS port
+      - MQTT_USE_TLS=true                 # Enable TLS
+      - MQTT_CA_FILE=/app/certs/ca.crt
+    volumes:
+      - ../configs:/app/configs:ro
+      - ../logs:/app/logs
+      - ../certs:/app/certs:ro           # Mount TLS certificates
+
+  postgres:
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../certs:/var/lib/postgresql/certs:ro  # Mount TLS certificates
+    command: >
+      postgres
+      -c ssl=on
+      -c ssl_cert_file=/var/lib/postgresql/certs/server.crt
+      -c ssl_key_file=/var/lib/postgresql/certs/server-key.pem
+      -c ssl_ca_file=/var/lib/postgresql/certs/ca.crt
+EOF
+
+    echo "   ✅ Emergency TLS configuration created"
+    echo "   📋 Use: docker-compose -f docker-compose.secure.yml -f docker-compose.tls-emergency.yml up -d"
+else
+    echo "   ⚠️  TLS certificates not found"
+    echo "   🔐 Generate certificates with: ../scripts/generate-certificates.sh"
+    echo "   🚀 Deploy full TLS with: ../scripts/deploy-tls.sh"
+fi
+
+echo ""
 echo "🎉 EMERGENCY SECURITY FIXES COMPLETED!"
 echo "====================================="
 echo ""
@@ -611,21 +679,35 @@ echo "   ✅ Configured MQTT security (authentication required)"
 echo "   ✅ Removed exposed database port"
 echo "   ✅ Created security status checker"
 echo "   ✅ Generated secure credentials file"
+echo "   ✅ Emergency TLS configuration (if certificates available)"
 echo ""
 echo "🚀 TO START SECURE SYSTEM:"
 echo "   cd deployments"
+if [ -f "../certs/ca.crt" ]; then
+    echo "   # With TLS (recommended):"
+    echo "   docker-compose -f docker-compose.secure.yml -f docker-compose.tls-emergency.yml --env-file ../.env.secure up -d"
+    echo "   # Or without TLS:"
+fi
 echo "   docker-compose -f docker-compose.secure.yml --env-file ../.env.secure up -d"
 echo ""
 echo "🔍 TO CHECK SECURITY STATUS:"
 echo "   ./scripts/check-security.sh"
+if [ -f "../certs/ca.crt" ]; then
+    echo "   ./scripts/verify-tls.sh"
+fi
 echo ""
 echo "🔑 IMPORTANT NEXT STEPS:"
 echo "   1. Copy credentials from .credentials-*.txt to secure password manager"
 echo "   2. Delete credentials file after copying"
 echo "   3. Test system functionality"
 echo "   4. Setup MQTT user password"
-echo "   5. Configure TLS certificates"
-echo "   6. Implement remaining security recommendations"
+if [ ! -f "../certs/ca.crt" ]; then
+    echo "   5. Generate TLS certificates: ./scripts/generate-certificates.sh"
+    echo "   6. Deploy full TLS: ./scripts/deploy-tls.sh"
+else
+    echo "   5. Deploy full TLS infrastructure: ./scripts/deploy-tls.sh"
+fi
+echo "   7. Implement remaining security recommendations"
 echo ""
 echo "⚠️  BACKUP LOCATION: $BACKUP_DIR"
 echo "🔒 CREDENTIALS FILE: $(ls .credentials-*.txt)"

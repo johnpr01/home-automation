@@ -27,6 +27,7 @@ This system provides a unified platform for managing home automation devices wit
 - **🛡️ Comprehensive Error Handling**: Structured errors, retry mechanisms, circuit breakers, and health monitoring
 - **📊 Production Monitoring**: Structured logging, health checks, and error metrics
 - **🔄 Automatic Recovery**: Circuit breakers, retry logic, and graceful degradation
+- **🔒 Enterprise Security**: TLS encryption, secure authentication, and comprehensive security auditing
 
 ### 🏗️ **Service Architecture:**
 - **Thermostat Service**: HVAC temperature control and automation
@@ -48,6 +49,53 @@ This system provides a unified platform for managing home automation devices wit
 ### 🤖 **Smart Automation Features:**
 - **Motion-Activated Lighting**: Automatically turn on lights when motion is detected in dark rooms
 - **Intelligent Light Control**: Only activates lights when ambient light is below threshold (20%)
+
+### 🔒 **Enterprise Security Features:**
+- **TLS Encryption**: All communications encrypted with TLS 1.2/1.3
+- **HTTPS/MQTTS**: Secure web interfaces and MQTT messaging
+- **Certificate Management**: Self-signed certificates with proper CA chain
+- **Authentication**: Secure password-based authentication for all services
+- **Network Security**: Internal Docker networks, no unnecessary port exposure
+- **Secret Management**: Secure environment configuration with restricted permissions
+- **Security Auditing**: Comprehensive security status monitoring and reporting
+- **Emergency Security Fix**: Automated script to quickly secure the system
+
+## 🛡️ **Security & TLS Setup**
+
+This system includes comprehensive security features with TLS encryption for all communications.
+
+### **Quick Security Setup:**
+```bash
+# 1. Generate TLS certificates
+./scripts/generate-certificates.sh
+
+# 2. Deploy TLS-enabled system
+./scripts/deploy-tls.sh
+
+# 3. Verify security status
+./scripts/check-security.sh
+./scripts/verify-tls.sh
+```
+
+### **Secure Access URLs:**
+- **🌐 Home Automation API:** `https://localhost:8443`
+- **📊 Grafana Dashboard:** `https://localhost:3443`
+- **📈 Prometheus:** `https://localhost:9443`
+- **⚡ Tapo Metrics:** `https://localhost:2443`
+- **📨 MQTTS:** `mqtts://localhost:8883`
+
+### **Emergency Security Fix:**
+If you need to quickly secure an existing installation:
+```bash
+./scripts/emergency-security-fix.sh
+```
+
+This will:
+- Generate strong passwords
+- Create secure configuration
+- Disable anonymous access
+- Add TLS configuration (if certificates exist)
+- Create backup of original settings
 - **Cooldown Protection**: Prevents rapid on/off cycles with 5-minute cooldown periods
 - **Cross-Sensor Integration**: Coordinates between motion sensors, light sensors, and device control
 - **Rule-Based Automation**: Configurable automation rules for different rooms and scenarios
