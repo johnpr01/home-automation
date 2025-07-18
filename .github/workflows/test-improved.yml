@@ -329,11 +329,47 @@ jobs:
     - name: Wait for services
       run: |
         echo "⏳ Waiting for MQTT broker..."
-        timeout 60 bash -c 'until nc -z localhost 1883; do sleep 2; done'
-        echo "✅ MQTT broker is ready"
+        
+        # More robust MQTT broker check
+        for i in {1..30}; do
+          if nc -z localhost 1883; then
+            echo "✅ MQTT broker port is open"
+            break
+          fi
+          echo "Attempt $i/30: MQTT broker not ready, waiting..."
+          sleep 2
+        done
+        
+        # Verify MQTT broker is actually accepting connections
+        if ! nc -z localhost 1883; then
+          echo "❌ MQTT broker failed to start"
+          exit 1
+        fi
+        
+        # Test MQTT broker with a simple publish
+        mosquitto_pub -h localhost -p 1883 -t "health/check" -m "startup" || {
+          echo "❌ MQTT broker not accepting commands"
+          exit 1
+        }
+        echo "✅ MQTT broker is ready and accepting connections"
         
         echo "⏳ Waiting for Redis..."
-        timeout 60 bash -c 'until nc -z localhost 6379; do sleep 2; done'
+        
+        # More robust Redis check
+        for i in {1..30}; do
+          if nc -z localhost 6379; then
+            echo "✅ Redis port is open"
+            break
+          fi
+          echo "Attempt $i/30: Redis not ready, waiting..."
+          sleep 2
+        done
+        
+        # Verify Redis is actually accepting connections
+        if ! nc -z localhost 6379; then
+          echo "❌ Redis failed to start"
+          exit 1
+        fi
         echo "✅ Redis is ready"
         
     - name: Install MQTT clients
@@ -345,16 +381,49 @@ jobs:
       run: |
         echo "🔌 Testing MQTT pub/sub..."
         
-        # Test publish
+        # Test basic publish
         mosquitto_pub -h localhost -p 1883 -t "test/topic" -m "test message"
         echo "✅ MQTT publish successful"
         
-        # Test subscribe with timeout
-        timeout 10s mosquitto_sub -h localhost -p 1883 -t "test/topic" -C 1 &
-        sleep 2
-        mosquitto_pub -h localhost -p 1883 -t "test/topic" -m "integration test"
-        wait
-        echo "✅ MQTT subscribe successful"
+        # Test subscribe with a more robust approach
+        echo "🔍 Testing MQTT subscribe..."
+        
+        # Start subscriber in background and capture its PID
+        mosquitto_sub -h localhost -p 1883 -t "test/integration" -C 1 > /tmp/mqtt_output.txt &
+        SUB_PID=$!
+        
+        # Give subscriber time to connect
+        sleep 3
+        
+        # Check if subscriber process is still running
+        if ! kill -0 $SUB_PID 2>/dev/null; then
+          echo "❌ MQTT subscriber failed to start"
+          exit 1
+        fi
+        
+        # Publish test message
+        mosquitto_pub -h localhost -p 1883 -t "test/integration" -m "integration test message"
+        
+        # Wait for subscriber to receive message (with timeout)
+        for i in {1..10}; do
+          if [ -s /tmp/mqtt_output.txt ]; then
+            echo "✅ MQTT subscribe successful"
+            echo "📨 Received: $(cat /tmp/mqtt_output.txt)"
+            kill $SUB_PID 2>/dev/null || true
+            break
+          fi
+          sleep 1
+        done
+        
+        # Check if we actually received the message
+        if [ ! -s /tmp/mqtt_output.txt ]; then
+          echo "❌ MQTT subscribe test failed - no message received"
+          kill $SUB_PID 2>/dev/null || true
+          exit 1
+        fi
+        
+        # Cleanup
+        rm -f /tmp/mqtt_output.txt
         
     - name: Run integration tests
       env:
