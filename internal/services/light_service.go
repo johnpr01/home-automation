@@ -266,7 +266,7 @@ func (ls *LightService) dayNightDetection() {
 				dayCount, nightCount, totalRooms))
 		} else if nightCount > dayCount {
 			ls.logger.Info(fmt.Sprintf("Overall lighting suggests NIGHT time (%d day, %d night out of %d rooms)",
-				dayCount, nightCount, totalRooms)
+				dayCount, nightCount, totalRooms))
 		}
 	}
 }
