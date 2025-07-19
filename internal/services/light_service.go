@@ -133,7 +133,11 @@ func (ls *LightService) handleLightMessage(topic string, payload []byte) error {
 	// Parse light message
 	var lightMsg LightSensorMessage
 	if err := json.Unmarshal(payload, &lightMsg); err != nil {
-		ls.logger.Error(fmt.Sprintf("Failed to parse light message for room %s", roomID), err)
+		ls.logger.Error("Failed to parse light sensor message", map[string]interface{}{
+			"error":   err.Error(),
+			"room_id": roomID,
+			"payload": string(payload),
+		})
 		return err
 	}
 
@@ -170,8 +174,13 @@ func (ls *LightService) handleLightMessage(topic string, payload []byte) error {
 
 	// Log significant changes
 	if previousState != lightLevel.LightState {
-		ls.logger.Info(fmt.Sprintf("Room %s light state changed: %s -> %s (%.1f%%)",
-			roomID, previousState, lightLevel.LightState, lightLevel.LightLevel))
+		ls.logger.Info("Light state changed", map[string]interface{}{
+			"room_id":        roomID,
+			"previous_state": previousState,
+			"new_state":      lightLevel.LightState,
+			"light_level":    lightLevel.LightLevel,
+			"device_id":      lightLevel.DeviceID,
+		})
 
 		// Notify callbacks of light state change
 		for _, callback := range ls.callbacks {
@@ -179,8 +188,13 @@ func (ls *LightService) handleLightMessage(topic string, payload []byte) error {
 		}
 	} else if abs(previousLevel-lightLevel.LightLevel) > 10.0 {
 		// Log significant level changes (>10%)
-		ls.logger.Info(fmt.Sprintf("Room %s light level: %.1f%% -> %.1f%% (%s)",
-			roomID, previousLevel, lightLevel.LightLevel, lightLevel.LightState))
+		ls.logger.Info("Significant light level change", map[string]interface{}{
+			"room_id":        roomID,
+			"previous_level": previousLevel,
+			"new_level":      lightLevel.LightLevel,
+			"state":          lightLevel.LightState,
+			"device_id":      lightLevel.DeviceID,
+		})
 	}
 
 	return nil
@@ -218,8 +232,11 @@ func (ls *LightService) cleanupRoutine() {
 			if currentTime.Sub(lightLevel.LastUpdateTime) > 10*time.Minute {
 				if lightLevel.IsOnline {
 					lightLevel.IsOnline = false
-					ls.logger.Warn(fmt.Sprintf("Room %s light sensor marked offline (device: %s)",
-						roomID, lightLevel.DeviceID))
+					ls.logger.Warn("Light sensor marked offline", map[string]interface{}{
+						"room_id":          roomID,
+						"device_id":        lightLevel.DeviceID,
+						"last_update_time": lightLevel.LastUpdateTime,
+					})
 				}
 			}
 		}
@@ -262,11 +279,21 @@ func (ls *LightService) dayNightDetection() {
 
 		// Log overall day/night status
 		if dayCount > nightCount {
-			ls.logger.Info(fmt.Sprintf("Overall lighting suggests DAY time (%d day, %d night out of %d rooms)",
-				dayCount, nightCount, totalRooms))
+			ls.logger.Info("Day/night cycle detection", map[string]interface{}{
+				"cycle":        "day",
+				"day_rooms":    dayCount,
+				"night_rooms":  nightCount,
+				"total_rooms":  totalRooms,
+				"time_of_day": time.Now().Format("15:04"),
+			})
 		} else if nightCount > dayCount {
-			ls.logger.Info(fmt.Sprintf("Overall lighting suggests NIGHT time (%d day, %d night out of %d rooms)",
-				dayCount, nightCount, totalRooms))
+			ls.logger.Info("Day/night cycle detection", map[string]interface{}{
+				"cycle":        "night",
+				"day_rooms":    dayCount,
+				"night_rooms":  nightCount,
+				"total_rooms":  totalRooms,
+				"time_of_day": time.Now().Format("15:04"),
+			})
 		}
 	}
 }
