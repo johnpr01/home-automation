@@ -1,0 +1,51 @@
+# Services for Home Automation integration
+reload_config:
+  name: Reload Configuration
+  description: Reload the Home Automation integration configuration
+  fields: {}
+
+add_room:
+  name: Add Room
+  description: Add a new room to the home automation system
+  fields:
+    name:
+      name: Room Name
+      description: Name of the room to add
+      required: true
+      selector:
+        text:
+
+remove_room:
+  name: Remove Room  
+  description: Remove a room from the home automation system
+  fields:
+    room_id:
+      name: Room ID
+      description: ID of the room to remove
+      required: true
+      selector:
+        text:
+
+publish_mqtt:
+  name: Publish MQTT Message
+  description: Publish a message to an MQTT topic
+  fields:
+    topic:
+      name: Topic
+      description: MQTT topic to publish to
+      required: true
+      selector:
+        text:
+    payload:
+      name: Payload
+      description: Message payload to publish
+      required: true
+      selector:
+        text:
+    retain:
+      name: Retain
+      description: Whether to retain the message
+      required: false
+      default: false
+      selector:
+        boolean:

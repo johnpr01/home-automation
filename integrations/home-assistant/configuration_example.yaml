@@ -1,0 +1,100 @@
+# Home Assistant Configuration Example
+# Add this to your configuration.yaml or create a separate package
+
+# Home Automation Integration
+home_automation:
+  host: "192.168.1.100"  # IP address of your home automation system
+  port: 8080             # Port your Go API is running on
+  api_key: "your-api-key-here"  # API key for authentication
+  
+  # Optional MQTT configuration for real-time updates
+  mqtt:
+    host: "192.168.1.101"  # MQTT broker IP
+    port: 1883             # MQTT broker port
+    username: "homeassistant"  # MQTT username (optional)
+    password: "mqtt_password"  # MQTT password (optional)
+
+# MQTT Configuration (if using MQTT features)
+mqtt:
+  broker: 192.168.1.101
+  port: 1883
+  username: homeassistant
+  password: mqtt_password
+  discovery: true
+  discovery_prefix: homeassistant
+
+# Example automation using the integration
+automation:
+  - alias: "Motion Detected in Living Room"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.living_room_motion
+        to: "on"
+    action:
+      - service: light.turn_on
+        target:
+          entity_id: light.living_room_light
+        data:
+          brightness: 255
+
+  - alias: "Temperature Alert"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.bedroom_temperature
+        above: 78
+    action:
+      - service: climate.set_temperature
+        target:
+          entity_id: climate.bedroom_climate
+        data:
+          temperature: 72
+
+# Example scripts using the integration services
+script:
+  add_guest_room:
+    alias: "Add Guest Room"
+    sequence:
+      - service: home_automation.add_room
+        data:
+          name: "Guest Room"
+
+  evening_routine:
+    alias: "Evening Routine"
+    sequence:
+      - service: light.turn_on
+        target:
+          area_id: living_room
+        data:
+          brightness: 128
+      - service: climate.set_temperature
+        target:
+          area_id: bedroom
+        data:
+          temperature: 70
+
+# Example sensor template for room occupancy
+template:
+  - sensor:
+      - name: "Total Occupied Rooms"
+        state: >
+          {{ states.binary_sensor 
+             | selectattr('attributes.device_class', 'eq', 'occupancy')
+             | selectattr('state', 'eq', 'on')
+             | list | count }}
+        unit_of_measurement: "rooms"
+
+# Example dashboard card configuration
+lovelace:
+  dashboards:
+    home-automation:
+      mode: yaml
+      title: Home Automation
+      icon: mdi:home-automation
+      show_in_sidebar: true
+      filename: home-automation.yaml
+
+# Example notification for system events
+notify:
+  - name: home_automation_alerts
+    platform: file
+    filename: /config/home_automation_alerts.log
