@@ -61,9 +61,9 @@ func TestAddMotionCallback(t *testing.T) {
 	}
 
 	payload, err := json.Marshal(motionMsg)
-		if err != nil {
-			t.Fatalf("Failed to marshal JSON: %v", err)
-		}
+	if err != nil {
+		t.Fatalf("Failed to marshal JSON: %v", err)
+	}
 	err := service.handleMotionMessage("room-motion/living-room", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -111,9 +111,9 @@ func TestGetRoomOccupancy(t *testing.T) {
 	}
 
 	payload, err := json.Marshal(motionMsg)
-		if err != nil {
-			t.Fatalf("Failed to marshal JSON: %v", err)
-		}
+	if err != nil {
+		t.Fatalf("Failed to marshal JSON: %v", err)
+	}
 	service.handleMotionMessage("room-motion/bedroom", payload)
 
 	// Test existing room
@@ -202,9 +202,9 @@ func TestHandleMotionMessage(t *testing.T) {
 	}
 
 	payload, err := json.Marshal(motionMsg)
-		if err != nil {
-			t.Fatalf("Failed to marshal JSON: %v", err)
-		}
+	if err != nil {
+		t.Fatalf("Failed to marshal JSON: %v", err)
+	}
 	err := service.handleMotionMessage("room-motion/office", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -383,9 +383,9 @@ func TestConcurrentMotionUpdates(t *testing.T) {
 				}
 
 				payload, err := json.Marshal(motionMsg)
-		if err != nil {
-			t.Fatalf("Failed to marshal JSON: %v", err)
-		}
+				if err != nil {
+					t.Fatalf("Failed to marshal JSON: %v", err)
+				}
 				service.handleMotionMessage("room-motion/"+roomID, payload)
 			}
 		}(i)
@@ -420,9 +420,9 @@ func TestMotionTimeout(t *testing.T) {
 	}
 
 	payload, err := json.Marshal(motionMsg)
-		if err != nil {
-			t.Fatalf("Failed to marshal JSON: %v", err)
-		}
+	if err != nil {
+		t.Fatalf("Failed to marshal JSON: %v", err)
+	}
 	service.handleMotionMessage("room-motion/timeout-room", payload)
 
 	// Verify room is occupied
@@ -458,9 +458,9 @@ func TestDeviceOnlineStatus(t *testing.T) {
 	}
 
 	payload, err := json.Marshal(motionMsg)
-		if err != nil {
-			t.Fatalf("Failed to marshal JSON: %v", err)
-		}
+	if err != nil {
+		t.Fatalf("Failed to marshal JSON: %v", err)
+	}
 	service.handleMotionMessage("room-motion/online-test", payload)
 
 	// Check device is marked online

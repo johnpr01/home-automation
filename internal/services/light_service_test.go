@@ -64,9 +64,9 @@ func TestAddLightCallback(t *testing.T) {
 	}
 
 	payload, err := json.Marshal(lightMsg)
-		if err != nil {
-			t.Fatalf("Failed to marshal JSON: %v", err)
-		}
+	if err != nil {
+		t.Fatalf("Failed to marshal JSON: %v", err)
+	}
 	err := service.handleLightMessage("room-light/living-room", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -119,9 +119,9 @@ func TestGetRoomLightLevel(t *testing.T) {
 	}
 
 	payload, err := json.Marshal(lightMsg)
-		if err != nil {
-			t.Fatalf("Failed to marshal JSON: %v", err)
-		}
+	if err != nil {
+		t.Fatalf("Failed to marshal JSON: %v", err)
+	}
 	service.handleLightMessage("room-light/bedroom", payload)
 
 	// Test existing room
@@ -226,9 +226,9 @@ func TestHandleLightMessage(t *testing.T) {
 	}
 
 	payload, err := json.Marshal(lightMsg)
-		if err != nil {
-			t.Fatalf("Failed to marshal JSON: %v", err)
-		}
+	if err != nil {
+		t.Fatalf("Failed to marshal JSON: %v", err)
+	}
 	err := service.handleLightMessage("room-light/office", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -447,9 +447,9 @@ func TestConcurrentLightUpdates(t *testing.T) {
 				}
 
 				payload, err := json.Marshal(lightMsg)
-		if err != nil {
-			t.Fatalf("Failed to marshal JSON: %v", err)
-		}
+				if err != nil {
+					t.Fatalf("Failed to marshal JSON: %v", err)
+				}
 				service.handleLightMessage("room-light/"+roomID, payload)
 			}
 		}(i)
@@ -485,9 +485,9 @@ func TestDeviceOnlineStatusLight(t *testing.T) {
 	}
 
 	payload, err := json.Marshal(lightMsg)
-		if err != nil {
-			t.Fatalf("Failed to marshal JSON: %v", err)
-		}
+	if err != nil {
+		t.Fatalf("Failed to marshal JSON: %v", err)
+	}
 	service.handleLightMessage("room-light/online-test", payload)
 
 	// Check device is marked online
