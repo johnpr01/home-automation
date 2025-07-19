@@ -133,7 +133,7 @@ func (ls *LightService) handleLightMessage(topic string, payload []byte) error {
 	// Parse light message
 	var lightMsg LightSensorMessage
 	if err := json.Unmarshal(payload, &lightMsg); err != nil {
-		ls.logger.Error("Failed to parse light sensor message", map[string]interface{}{
+		ls.logger.Error("Failed to parse light sensor message", fmt.Errorf("error"), map[string]interface{}{
 			"error":   err.Error(),
 			"room_id": roomID,
 			"payload": string(payload),
