@@ -384,7 +384,8 @@ func TestConcurrentMotionUpdates(t *testing.T) {
 
 				payload, err := json.Marshal(motionMsg)
 				if err != nil {
-					t.Fatalf("Failed to marshal JSON: %v", err)
+					t.Errorf("Failed to marshal JSON: %v", err)
+					return
 				}
 				service.handleMotionMessage("room-motion/"+roomID, payload)
 			}

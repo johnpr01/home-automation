@@ -38,15 +38,15 @@ func NewLight(id, name string) *Light {
 
 func (l *Light) TurnOn() error {
 	l.IsOn = true
-	l.Status = "on"
-	l.LastUpdated = time.Now()
+	l.Device.Status = "on"
+	l.Device.LastUpdated = time.Now()
 	return nil
 }
 
 func (l *Light) TurnOff() error {
 	l.IsOn = false
-	l.Status = "off"
-	l.LastUpdated = time.Now()
+	l.Device.Status = "off"
+	l.Device.LastUpdated = time.Now()
 	return nil
 }
 

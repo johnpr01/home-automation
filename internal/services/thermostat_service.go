@@ -295,11 +295,8 @@ func (ts *ThermostatService) controlLoop() {
 	ticker := time.NewTicker(30 * time.Second) // Check every 30 seconds
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			ts.processAllThermostats()
-		}
+	for range ticker.C {
+		ts.processAllThermostats()
 	}
 }
 

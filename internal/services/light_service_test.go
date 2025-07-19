@@ -448,7 +448,9 @@ func TestConcurrentLightUpdates(t *testing.T) {
 
 				payload, err := json.Marshal(lightMsg)
 				if err != nil {
-					t.Fatalf("Failed to marshal JSON: %v", err)
+					// Use a channel to communicate errors back to main test goroutine
+					t.Errorf("Failed to marshal JSON: %v", err)
+					return
 				}
 				service.handleLightMessage("room-light/"+roomID, payload)
 			}
