@@ -291,6 +291,9 @@ func TestHandleTemperatureMessage(t *testing.T) {
 	}
 
 	payload, err := json.Marshal(tempData)
+	if err != nil {
+		t.Fatalf("Failed to marshal temperature message: %v", err)
+	}
 
 	// Test handling the message
 	err = service.handleTemperatureMessage("room-temp/kitchen", payload)
