@@ -1,0 +1,153 @@
+version: '3.8'
+
+services:
+  # Home Automation Go Backend
+  home-automation:
+    build: .
+    container_name: home-automation
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - MQTT_BROKER=mqtt://mosquitto:1883
+      - MQTT_USERNAME=homeassistant
+      - MQTT_PASSWORD=mqtt_password
+      - API_KEY=your-secure-api-key-here
+      - LOG_LEVEL=info
+      - PROMETHEUS_ENABLED=true
+      - PROMETHEUS_PORT=9090
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
+    depends_on:
+      - mosquitto
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - home-automation
+
+  # MQTT Broker
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    restart: unless-stopped
+    networks:
+      - home-automation
+
+  # Prometheus for Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules:/etc/prometheus/rules
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - home-automation
+
+  # Grafana for Data Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - home-automation
+
+  # Home Assistant (optional - for testing the integration)
+  homeassistant:
+    container_name: homeassistant
+    image: homeassistant/home-assistant:stable
+    volumes:
+      - ./home-assistant-config:/config
+      - ./integrations/home-assistant/custom_components:/config/custom_components
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+    depends_on:
+      - home-automation
+      - mosquitto
+
+  # Redis for Caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - home-automation
+
+  # Node Exporter for System Metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
+    networks:
+      - home-automation
+
+  # cAdvisor for Container Metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    restart: unless-stopped
+    networks:
+      - home-automation
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  redis-data:
+
+networks:
+  home-automation:
+    driver: bridge

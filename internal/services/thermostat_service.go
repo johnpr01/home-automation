@@ -162,7 +162,7 @@ func (ts *ThermostatService) SetTargetTemperature(id string, temp float64) error
 
 	thermostat, exists := ts.thermostats[id]
 	if !exists {
-		ts.logger.Error("Thermostat not found when setting target temperature", map[string]interface{}{
+		ts.logger.Error("Thermostat not found when setting target temperature", fmt.Errorf("error"), map[string]interface{}{
 			"thermostat_id": id,
 			"target_temp":   temp,
 		})
@@ -170,7 +170,7 @@ func (ts *ThermostatService) SetTargetTemperature(id string, temp float64) error
 	}
 
 	if !thermostat.IsValidTargetTemp(temp) {
-		ts.logger.Error("Invalid target temperature", map[string]interface{}{
+		ts.logger.Error("Invalid target temperature", fmt.Errorf("invalid target temperature"), map[string]interface{}{
 			"thermostat_id": id,
 			"target_temp":   temp,
 			"min_temp":      thermostat.MinTemp,
@@ -204,7 +204,7 @@ func (ts *ThermostatService) SetMode(id string, mode models.ThermostatMode) erro
 
 	thermostat, exists := ts.thermostats[id]
 	if !exists {
-		ts.logger.Error("Thermostat not found when setting mode", map[string]interface{}{
+		ts.logger.Error("Thermostat not found when setting mode", fmt.Errorf("error"), map[string]interface{}{
 			"thermostat_id": id,
 			"mode":         mode,
 		})
@@ -212,7 +212,7 @@ func (ts *ThermostatService) SetMode(id string, mode models.ThermostatMode) erro
 	}
 
 	if !thermostat.IsValidMode(mode) {
-		ts.logger.Error("Invalid thermostat mode", map[string]interface{}{
+		ts.logger.Error("Invalid thermostat mode", fmt.Errorf("error"), map[string]interface{}{
 			"thermostat_id": id,
 			"mode":         mode,
 			"current_mode": thermostat.Mode,
@@ -253,7 +253,7 @@ func (ts *ThermostatService) handleTemperatureMessage(topic string, payload []by
 	// Extract room number from topic (room-temp/1)
 	parts := strings.Split(topic, "/")
 	if len(parts) != 2 {
-		ts.logger.Error("Invalid temperature topic format", map[string]interface{}{
+		ts.logger.Error("Invalid temperature topic format", fmt.Errorf("error"), map[string]interface{}{
 			"topic": topic,
 			"parts": len(parts),
 		})
@@ -265,7 +265,7 @@ func (ts *ThermostatService) handleTemperatureMessage(topic string, payload []by
 	// Parse JSON payload
 	var sensorData map[string]interface{}
 	if err := json.Unmarshal(payload, &sensorData); err != nil {
-		ts.logger.Error("Failed to parse temperature message", map[string]interface{}{
+		ts.logger.Error("Failed to parse temperature message", fmt.Errorf("error"), map[string]interface{}{
 			"error":   err.Error(),
 			"topic":   topic,
 			"payload": string(payload),
@@ -425,7 +425,7 @@ func (ts *ThermostatService) sendControlCommand(thermostat *models.Thermostat, s
 
 	payload, err := json.Marshal(command)
 	if err != nil {
-		ts.logger.Error("Failed to marshal control command", map[string]interface{}{
+		ts.logger.Error("Failed to marshal control command", fmt.Errorf("error"), map[string]interface{}{
 			"error":         err.Error(),
 			"thermostat_id": thermostat.ID,
 			"status":        status,
@@ -442,7 +442,7 @@ func (ts *ThermostatService) sendControlCommand(thermostat *models.Thermostat, s
 	}
 
 	if err := ts.mqttClient.Publish(msg); err != nil {
-		ts.logger.Error("Failed to publish control command", map[string]interface{}{
+		ts.logger.Error("Failed to publish control command", fmt.Errorf("error"), map[string]interface{}{
 			"error":         err.Error(),
 			"thermostat_id": thermostat.ID,
 			"topic":         topic,
@@ -473,7 +473,7 @@ func (ts *ThermostatService) publishThermostatCommand(id string, cmdType string,
 
 	payload, err := json.Marshal(command)
 	if err != nil {
-		ts.logger.Error("Failed to marshal thermostat command", map[string]interface{}{
+		ts.logger.Error("Failed to marshal thermostat command", fmt.Errorf("error"), map[string]interface{}{
 			"error":         err.Error(),
 			"thermostat_id": id,
 			"command_type":  cmdType,
@@ -490,7 +490,7 @@ func (ts *ThermostatService) publishThermostatCommand(id string, cmdType string,
 	}
 
 	if err := ts.mqttClient.Publish(msg); err != nil {
-		ts.logger.Error("Failed to publish thermostat command", map[string]interface{}{
+		ts.logger.Error("Failed to publish thermostat command", fmt.Errorf("error"), map[string]interface{}{
 			"error":         err.Error(),
 			"thermostat_id": id,
 			"topic":         topic,

@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Home Automation Integration",
+        "description": "Configure your Home Automation system connection",
+        "data": {
+          "host": "Host",
+          "port": "Port", 
+          "api_key": "API Key",
+          "mqtt_host": "MQTT Host (optional)",
+          "mqtt_port": "MQTT Port",
+          "mqtt_username": "MQTT Username (optional)",
+          "mqtt_password": "MQTT Password (optional)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the Home Automation system",
+      "invalid_auth": "Invalid API key",
+      "unknown": "Unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "Home Automation system is already configured"
+    }
+  }
+}

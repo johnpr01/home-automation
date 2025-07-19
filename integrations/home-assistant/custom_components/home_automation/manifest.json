@@ -1,0 +1,15 @@
+{
+  "domain": "home_automation",
+  "name": "Home Automation System", 
+  "codeowners": ["@johnpr01"],
+  "config_flow": true,
+  "documentation": "https://github.com/johnpr01/home-automation",
+  "issue_tracker": "https://github.com/johnpr01/home-automation/issues",
+  "requirements": ["aiohttp>=3.8.0"],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "after_dependencies": ["mqtt"],
+  "version": "1.0.0"
+}
