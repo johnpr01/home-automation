@@ -273,6 +273,9 @@ func TestAutomationService_CooldownLogic(t *testing.T) {
 			"device_id":     "pico-cooldown",
 		}
 		darkPayload, err := json.Marshal(darkLightMsg)
+		if err != nil {
+			t.Logf("Failed to marshal dark light message: %v", err)
+		}
 		lightService.handleLightMessage("room-light/kitchen", darkPayload)
 		time.Sleep(50 * time.Millisecond)
 
