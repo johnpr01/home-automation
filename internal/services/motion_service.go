@@ -3,11 +3,11 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/johnpr01/home-automation/internal/logger"
 	"github.com/johnpr01/home-automation/pkg/mqtt"
 )
 
@@ -38,12 +38,12 @@ type MotionService struct {
 	roomOccupancy map[string]*RoomOccupancy
 	mqttClient    *mqtt.Client
 	mu            sync.RWMutex
-	logger        *log.Logger
+	logger        *logger.Logger
 	callbacks     []func(roomID string, occupied bool)
 }
 
 // NewMotionService creates a new motion detection service
-func NewMotionService(mqttClient *mqtt.Client, logger *log.Logger) *MotionService {
+func NewMotionService(mqttClient *mqtt.Client, logger *logger.Logger) *MotionService {
 	service := &MotionService{
 		roomOccupancy: make(map[string]*RoomOccupancy),
 		mqttClient:    mqttClient,
@@ -99,7 +99,7 @@ func (ms *MotionService) GetAllOccupancy() map[string]*RoomOccupancy {
 func (ms *MotionService) subscribeMotionTopics() {
 	// Subscribe to motion detection messages
 	ms.mqttClient.Subscribe("room-motion/+", ms.handleMotionMessage)
-	ms.logger.Println("MotionService: Subscribed to room-motion/+ topics")
+	ms.logger.Info("Subscribed to room-motion/+ topics")
 }
 
 // extractRoomID extracts the room ID from an MQTT topic
@@ -126,7 +126,7 @@ func (ms *MotionService) handleMotionMessage(topic string, payload []byte) error
 	// Parse motion message
 	var motionMsg MotionDetectionMessage
 	if err := json.Unmarshal(payload, &motionMsg); err != nil {
-		ms.logger.Printf("MotionService: Failed to parse motion message for room %s: %v", roomID, err)
+		ms.logger.Error(fmt.Sprintf("Failed to parse motion message for room %s", roomID), err)
 		return err
 	}
 
@@ -165,8 +165,8 @@ func (ms *MotionService) handleMotionMessage(topic string, payload []byte) error
 		}
 
 		if !previouslyOccupied {
-			ms.logger.Printf("MotionService: Motion DETECTED in room %s (device: %s)",
-				roomID, motionMsg.DeviceID)
+			ms.logger.Info(fmt.Sprintf("Motion DETECTED in room %s (device: %s)",
+				roomID, motionMsg.DeviceID))
 
 			// Notify callbacks of occupancy change
 			for _, callback := range ms.callbacks {
@@ -179,8 +179,8 @@ func (ms *MotionService) handleMotionMessage(topic string, payload []byte) error
 		occupancy.LastClearedTime = currentTime
 
 		if previouslyOccupied {
-			ms.logger.Printf("MotionService: Motion CLEARED in room %s (device: %s)",
-				roomID, motionMsg.DeviceID)
+			ms.logger.Info(fmt.Sprintf("Motion CLEARED in room %s (device: %s)",
+				roomID, motionMsg.DeviceID))
 
 			// Notify callbacks of occupancy change
 			for _, callback := range ms.callbacks {
@@ -207,8 +207,8 @@ func (ms *MotionService) cleanupRoutine() {
 				currentTime.Sub(occupancy.LastClearedTime) > 10*time.Minute {
 				if occupancy.IsOnline {
 					occupancy.IsOnline = false
-					ms.logger.Printf("MotionService: Room %s sensor marked offline (device: %s)",
-						roomID, occupancy.DeviceID)
+					ms.logger.Warn(fmt.Sprintf("Room %s sensor marked offline (device: %s)",
+						roomID, occupancy.DeviceID))
 				}
 			}
 		}

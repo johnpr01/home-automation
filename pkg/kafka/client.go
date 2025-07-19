@@ -45,7 +45,7 @@ type Client struct {
 	ctx            context.Context
 	cancel         context.CancelFunc
 	messageQueue   chan *LogMessage
-	queueMutex     sync.RWMutex
+	// queueMutex removed as it was unused
 }
 
 // ClientOptions provides configuration options for the Kafka client

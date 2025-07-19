@@ -59,7 +59,7 @@ func TestAutomationService_MotionActivatedLighting(t *testing.T) {
 			"timestamp":     time.Now().Unix(),
 			"device_id":     "pico-test",
 		}
-		darkPayload, _ := json.Marshal(darkLightMsg)
+		darkPayload, err := json.Marshal(darkLightMsg)
 		lightService.handleLightMessage("room-light/living-room", darkPayload)
 
 		// Give light service time to process
@@ -72,7 +72,7 @@ func TestAutomationService_MotionActivatedLighting(t *testing.T) {
 			"timestamp": time.Now().Unix(),
 			"device_id": "pico-test",
 		}
-		motionPayload, _ := json.Marshal(motionMsg)
+		motionPayload, err := json.Marshal(motionMsg)
 		motionService.handleMotionMessage("room-motion/living-room", motionPayload)
 
 		// Give automation service time to process
@@ -108,7 +108,7 @@ func TestAutomationService_MotionActivatedLighting(t *testing.T) {
 			"timestamp":     time.Now().Unix(),
 			"device_id":     "pico-test",
 		}
-		brightPayload, _ := json.Marshal(brightLightMsg)
+		brightPayload, err := json.Marshal(brightLightMsg)
 		lightService.handleLightMessage("room-light/living-room", brightPayload)
 
 		// Give light service time to process
@@ -121,7 +121,7 @@ func TestAutomationService_MotionActivatedLighting(t *testing.T) {
 			"timestamp": time.Now().Unix(),
 			"device_id": "pico-test",
 		}
-		motionPayload, _ := json.Marshal(motionMsg)
+		motionPayload, err := json.Marshal(motionMsg)
 		motionService.handleMotionMessage("room-motion/living-room", motionPayload)
 
 		// Give automation service time to process
@@ -272,7 +272,10 @@ func TestAutomationService_CooldownLogic(t *testing.T) {
 			"timestamp":     time.Now().Unix(),
 			"device_id":     "pico-cooldown",
 		}
-		darkPayload, _ := json.Marshal(darkLightMsg)
+		darkPayload, err := json.Marshal(darkLightMsg)
+		if err != nil {
+			t.Logf("Failed to marshal dark light message: %v", err)
+		}
 		lightService.handleLightMessage("room-light/kitchen", darkPayload)
 		time.Sleep(50 * time.Millisecond)
 
@@ -283,7 +286,7 @@ func TestAutomationService_CooldownLogic(t *testing.T) {
 			"timestamp": time.Now().Unix(),
 			"device_id": "pico-cooldown",
 		}
-		motionPayload, _ := json.Marshal(motionMsg)
+		motionPayload, err := json.Marshal(motionMsg)
 		motionService.handleMotionMessage("room-motion/kitchen", motionPayload)
 		time.Sleep(50 * time.Millisecond)
 

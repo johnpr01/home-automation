@@ -1,12 +1,10 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/johnpr01/home-automation/internal/logger"
 	"github.com/johnpr01/home-automation/pkg/tapo"
@@ -17,7 +15,6 @@ func main() {
 		host     = flag.String("host", "", "IP address of the Tapo device (required)")
 		username = flag.String("username", "", "TP-Link account username (required)")
 		password = flag.String("password", "", "TP-Link account password (required)")
-		timeout  = flag.Duration("timeout", 30*time.Second, "Connection timeout")
 		help     = flag.Bool("help", false, "Show help message")
 	)
 
@@ -62,18 +59,17 @@ func main() {
 	fmt.Printf("🔌 Testing legacy protocol connection to %s\n", *host)
 
 	// Create legacy client
-	client := tapo.NewTapoClient(*host, *username, *password, &testLogger)
+	client := tapo.NewTapoClient(*host, *username, *password, testLogger)
 
 	// Test connection
-	ctx := context.Background()
-	if err := client.Connect(ctx); err != nil {
+	if err := client.Connect(); err != nil {
 		log.Fatalf("Failed to connect to device using legacy protocol: %v", err)
 	}
 
 	fmt.Println("✅ Successfully connected using legacy protocol!")
 
 	// Get device information
-	deviceInfo, err := client.GetDeviceInfo(ctx)
+	deviceInfo, err := client.GetDeviceInfo()
 	if err != nil {
 		log.Fatalf("Failed to get device info: %v", err)
 	}
@@ -81,21 +77,21 @@ func main() {
 	fmt.Printf("\n📱 Device Info:\n")
 	fmt.Printf("  Device ID: %s\n", deviceInfo.DeviceID)
 	fmt.Printf("  Model: %s\n", deviceInfo.Model)
-	fmt.Printf("  Firmware: %s\n", deviceInfo.FwVersion)
-	fmt.Printf("  Device On: %t\n", deviceInfo.DeviceOn)
+	fmt.Printf("  Firmware: %s\n", deviceInfo.FirmwareVer)
+	fmt.Printf("  Device On: %t\n", deviceInfo.IsOn)
 	fmt.Printf("  RSSI: %d\n", deviceInfo.RSSI)
 
 	// Get energy usage
-	energyUsage, err := client.GetEnergyUsage(ctx)
+	energyUsage, err := client.GetEnergyUsage()
 	if err != nil {
 		log.Fatalf("Failed to get energy usage: %v", err)
 	}
 
 	fmt.Printf("\n⚡ Energy Usage:\n")
-	fmt.Printf("  Current Power: %d mW\n", energyUsage.CurrentPower)
-	fmt.Printf("  Today Energy: %d Wh\n", energyUsage.TodayEnergy)
-	fmt.Printf("  Month Energy: %d Wh\n", energyUsage.MonthEnergy)
-	fmt.Printf("  Today Runtime: %d minutes\n", energyUsage.TodayRuntime)
+	fmt.Printf("  Current Power: %d mW\n", energyUsage.CurrentPowerMw)
+	fmt.Printf("  Today Energy: %d Wh\n", energyUsage.TodayEnergyWh)
+	fmt.Printf("  Month Energy: %d Wh\n", energyUsage.MonthEnergyWh)
+	fmt.Printf("  Today Runtime: %d minutes\n", energyUsage.TodayRuntimeMin)
 
 	fmt.Println("\n🎉 Legacy protocol test completed successfully!")
 }

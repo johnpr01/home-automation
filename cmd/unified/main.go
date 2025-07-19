@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/johnpr01/home-automation/internal/config"
+	"github.com/johnpr01/home-automation/internal/logger"
 	"github.com/johnpr01/home-automation/internal/services"
+	"github.com/johnpr01/home-automation/pkg/kafka"
 	"github.com/johnpr01/home-automation/pkg/mqtt"
 )
 
@@ -82,8 +84,12 @@ func (has *HomeAutomationSystem) initializeServices() error {
 	// Initialize unified sensor service
 	has.unifiedSensorService = services.NewUnifiedSensorService(has.mqttClient, has.logger)
 
+	// Create custom logger for thermostat service
+	kafkaClient := kafka.NewClient([]string{"localhost:9092"}, "thermostat-logs", nil)
+	customLogger := logger.NewLogger("ThermostatService", kafkaClient)
+
 	// Initialize thermostat service
-	has.thermostatService = services.NewThermostatService(has.mqttClient, has.logger)
+	has.thermostatService = services.NewThermostatService(has.mqttClient, customLogger)
 
 	// Connect sensor service to thermostat service
 	has.unifiedSensorService.AddTemperatureCallback(has.thermostatService.HandleTemperatureUpdate)
