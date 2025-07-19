@@ -290,7 +290,7 @@ func TestHandleTemperatureMessage(t *testing.T) {
 		"unit":        "F",
 	}
 
-	payload, _ := json.Marshal(tempData)
+	payload, err := json.Marshal(tempData)
 
 	// Test handling the message
 	err := service.handleTemperatureMessage("room-temp/kitchen", payload)

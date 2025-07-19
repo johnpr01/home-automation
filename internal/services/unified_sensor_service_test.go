@@ -73,7 +73,7 @@ func TestUnifiedSensorService(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 		DeviceID:    "pico-living-room",
 	}
-	tempPayload, _ := json.Marshal(tempMsg)
+	tempPayload, err := json.Marshal(tempMsg)
 	service.handleTemperatureMessage("room-temp/living-room", tempPayload)
 
 	// Simulate motion message
@@ -85,7 +85,7 @@ func TestUnifiedSensorService(t *testing.T) {
 		Timestamp: time.Now().Unix(),
 		DeviceID:  "pico-living-room",
 	}
-	motionPayload, _ := json.Marshal(motionMsg)
+	motionPayload, err := json.Marshal(motionMsg)
 	service.handleMotionMessage("room-motion/living-room", motionPayload)
 
 	// Simulate light message
@@ -98,7 +98,7 @@ func TestUnifiedSensorService(t *testing.T) {
 		Timestamp:  time.Now().Unix(),
 		DeviceID:   "pico-living-room",
 	}
-	lightPayload, _ := json.Marshal(lightMsg)
+	lightPayload, err := json.Marshal(lightMsg)
 	service.handleLightMessage("room-light/living-room", lightPayload)
 
 	// Give callbacks time to execute

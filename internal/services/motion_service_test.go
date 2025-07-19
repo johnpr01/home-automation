@@ -60,7 +60,10 @@ func TestAddMotionCallback(t *testing.T) {
 		DeviceID:  "pico-living-room",
 	}
 
-	payload, _ := json.Marshal(motionMsg)
+	payload, err := json.Marshal(motionMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 	err := service.handleMotionMessage("room-motion/living-room", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -107,7 +110,10 @@ func TestGetRoomOccupancy(t *testing.T) {
 		DeviceID:  "pico-bedroom",
 	}
 
-	payload, _ := json.Marshal(motionMsg)
+	payload, err := json.Marshal(motionMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 	service.handleMotionMessage("room-motion/bedroom", payload)
 
 	// Test existing room
@@ -153,7 +159,10 @@ func TestGetAllRoomOccupancy(t *testing.T) {
 			DeviceID:  "pico-" + room,
 		}
 
-		payload, _ := json.Marshal(motionMsg)
+		payload, err := json.Marshal(motionMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 		service.handleMotionMessage("room-motion/"+room, payload)
 	}
 
@@ -192,7 +201,10 @@ func TestHandleMotionMessage(t *testing.T) {
 		DeviceID:    "pico-office",
 	}
 
-	payload, _ := json.Marshal(motionMsg)
+	payload, err := json.Marshal(motionMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 	err := service.handleMotionMessage("room-motion/office", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -293,7 +305,10 @@ func TestMotionServiceSummary(t *testing.T) {
 			DeviceID:  "pico-" + room.name,
 		}
 
-		payload, _ := json.Marshal(motionMsg)
+		payload, err := json.Marshal(motionMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 		service.handleMotionMessage("room-motion/"+room.name, payload)
 	}
 
@@ -367,7 +382,10 @@ func TestConcurrentMotionUpdates(t *testing.T) {
 					DeviceID:  "pico-" + roomID,
 				}
 
-				payload, _ := json.Marshal(motionMsg)
+				payload, err := json.Marshal(motionMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 				service.handleMotionMessage("room-motion/"+roomID, payload)
 			}
 		}(i)
@@ -401,7 +419,10 @@ func TestMotionTimeout(t *testing.T) {
 		DeviceID:  "pico-timeout-room",
 	}
 
-	payload, _ := json.Marshal(motionMsg)
+	payload, err := json.Marshal(motionMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 	service.handleMotionMessage("room-motion/timeout-room", payload)
 
 	// Verify room is occupied
@@ -436,7 +457,10 @@ func TestDeviceOnlineStatus(t *testing.T) {
 		DeviceID:  "pico-online-test",
 	}
 
-	payload, _ := json.Marshal(motionMsg)
+	payload, err := json.Marshal(motionMsg)
+		if err != nil {
+			t.Fatalf("Failed to marshal JSON: %v", err)
+		}
 	service.handleMotionMessage("room-motion/online-test", payload)
 
 	// Check device is marked online
