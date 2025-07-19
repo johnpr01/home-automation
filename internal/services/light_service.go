@@ -3,11 +3,11 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/johnpr01/home-automation/internal/logger"
 	"github.com/johnpr01/home-automation/pkg/mqtt"
 )
 
@@ -40,7 +40,7 @@ type LightService struct {
 	roomLightLevels map[string]*RoomLightLevel
 	mqttClient      *mqtt.Client
 	mu              sync.RWMutex
-	logger          *log.Logger
+	logger          *logger.Logger
 	callbacks       []func(roomID string, lightState string, lightLevel float64)
 
 	// Configuration thresholds
@@ -49,7 +49,7 @@ type LightService struct {
 }
 
 // NewLightService creates a new light sensor service
-func NewLightService(mqttClient *mqtt.Client, logger *log.Logger) *LightService {
+func NewLightService(mqttClient *mqtt.Client, logger *logger.Logger) *LightService {
 	service := &LightService{
 		roomLightLevels: make(map[string]*RoomLightLevel),
 		mqttClient:      mqttClient,
@@ -118,7 +118,7 @@ func (ls *LightService) GetAllLightLevels() map[string]*RoomLightLevel {
 func (ls *LightService) subscribeLightTopics() {
 	// Subscribe to light sensor messages
 	ls.mqttClient.Subscribe("room-light/+", ls.handleLightMessage)
-	ls.logger.Println("LightService: Subscribed to room-light/+ topics")
+	ls.logger.Info("Subscribed to room-light/+ topics")
 }
 
 // handleLightMessage processes light sensor messages from Pi Pico sensors
@@ -133,7 +133,7 @@ func (ls *LightService) handleLightMessage(topic string, payload []byte) error {
 	// Parse light message
 	var lightMsg LightSensorMessage
 	if err := json.Unmarshal(payload, &lightMsg); err != nil {
-		ls.logger.Printf("LightService: Failed to parse light message for room %s: %v", roomID, err)
+		ls.logger.Error(fmt.Sprintf("Failed to parse light message for room %s", roomID), err)
 		return err
 	}
 
@@ -170,8 +170,8 @@ func (ls *LightService) handleLightMessage(topic string, payload []byte) error {
 
 	// Log significant changes
 	if previousState != lightLevel.LightState {
-		ls.logger.Printf("LightService: Room %s light state changed: %s -> %s (%.1f%%)",
-			roomID, previousState, lightLevel.LightState, lightLevel.LightLevel)
+		ls.logger.Info(fmt.Sprintf("Room %s light state changed: %s -> %s (%.1f%%)",
+			roomID, previousState, lightLevel.LightState, lightLevel.LightLevel))
 
 		// Notify callbacks of light state change
 		for _, callback := range ls.callbacks {
@@ -179,8 +179,8 @@ func (ls *LightService) handleLightMessage(topic string, payload []byte) error {
 		}
 	} else if abs(previousLevel-lightLevel.LightLevel) > 10.0 {
 		// Log significant level changes (>10%)
-		ls.logger.Printf("LightService: Room %s light level: %.1f%% -> %.1f%% (%s)",
-			roomID, previousLevel, lightLevel.LightLevel, lightLevel.LightState)
+		ls.logger.Info(fmt.Sprintf("Room %s light level: %.1f%% -> %.1f%% (%s)",
+			roomID, previousLevel, lightLevel.LightLevel, lightLevel.LightState))
 	}
 
 	return nil
@@ -218,8 +218,8 @@ func (ls *LightService) cleanupRoutine() {
 			if currentTime.Sub(lightLevel.LastUpdateTime) > 10*time.Minute {
 				if lightLevel.IsOnline {
 					lightLevel.IsOnline = false
-					ls.logger.Printf("LightService: Room %s light sensor marked offline (device: %s)",
-						roomID, lightLevel.DeviceID)
+					ls.logger.Warn(fmt.Sprintf("Room %s light sensor marked offline (device: %s)",
+						roomID, lightLevel.DeviceID))
 				}
 			}
 		}
@@ -262,10 +262,10 @@ func (ls *LightService) dayNightDetection() {
 
 		// Log overall day/night status
 		if dayCount > nightCount {
-			ls.logger.Printf("LightService: Overall lighting suggests DAY time (%d day, %d night out of %d rooms)",
-				dayCount, nightCount, totalRooms)
+			ls.logger.Info(fmt.Sprintf("Overall lighting suggests DAY time (%d day, %d night out of %d rooms)",
+				dayCount, nightCount, totalRooms))
 		} else if nightCount > dayCount {
-			ls.logger.Printf("LightService: Overall lighting suggests NIGHT time (%d day, %d night out of %d rooms)",
+			ls.logger.Info(fmt.Sprintf("Overall lighting suggests NIGHT time (%d day, %d night out of %d rooms)",
 				dayCount, nightCount, totalRooms)
 		}
 	}
