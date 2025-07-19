@@ -24,7 +24,7 @@ type TapoClient struct {
 	password   string
 	httpClient *http.Client
 	logger     *logger.Logger
-	sessionID  string
+	// sessionID removed as it was unused
 	token      string
 }
 

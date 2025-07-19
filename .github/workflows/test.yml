@@ -13,7 +13,7 @@ jobs:
     
     strategy:
       matrix:
-        go-version: [1.21, 1.22]
+        go-version: [1.23]
     
     steps:
     - name: Checkout code
@@ -78,7 +78,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.22'
+        go-version: '1.23'
         
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v3
@@ -97,7 +97,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.22'
+        go-version: '1.23'
         
     - name: Run govulncheck (Official Go Vulnerability Scanner)
       run: |
@@ -136,7 +136,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.22'
+        go-version: '1.23'
         
     - name: Build all binaries
       env:
@@ -230,7 +230,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.22'
+        go-version: '1.23'
         
     - name: Wait for services
       run: |

@@ -33,8 +33,8 @@ func (ts *TemperatureSensor) ReadValue() (float64, error) {
 	// In real implementation, this would read from actual hardware
 	temperature := ts.simulateReading()
 
-	ts.Value = temperature
-	ts.LastUpdated = time.Now()
+	ts.Sensor.Value = temperature
+	ts.Sensor.LastUpdated = time.Now()
 
 	return temperature, nil
 }

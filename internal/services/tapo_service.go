@@ -308,7 +308,7 @@ func (ts *TapoService) pollDevice(manager *TapoDeviceManager) {
 
 	// Store in time series database
 	if ts.tsClient != nil {
-		if err := ts.tsClient.WriteEnergyReading(nil, reading.DeviceID, reading.RoomID,
+		if err := ts.tsClient.WriteEnergyReading(context.Background(), reading.DeviceID, reading.RoomID,
 			reading.PowerW, reading.EnergyWh, 0, 0, reading.IsOn, reading.Timestamp); err != nil {
 			ts.logger.Error("Failed to write energy reading to time series database", err, map[string]interface{}{
 				"device_id": manager.DeviceID,

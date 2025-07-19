@@ -22,6 +22,18 @@ build/
 bin/
 dist/
 
+# Go binary executables (built from cmd/ directories)
+automation-demo
+discovery-test
+integrated
+tapo-demo
+test-components
+test-klap
+thermostat
+diagnose-1003
+test-legacy
+unified
+
 # IDE files
 .vscode/
 .idea/
