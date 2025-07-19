@@ -74,6 +74,9 @@ func TestUnifiedSensorService(t *testing.T) {
 		DeviceID:    "pico-living-room",
 	}
 	tempPayload, err := json.Marshal(tempMsg)
+	if err != nil {
+		t.Fatalf("Failed to marshal temperature message: %v", err)
+	}
 	service.handleTemperatureMessage("room-temp/living-room", tempPayload)
 
 	// Simulate motion message

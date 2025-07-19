@@ -67,7 +67,7 @@ func TestAddLightCallback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to marshal JSON: %v", err)
 	}
-	err := service.handleLightMessage("room-light/living-room", payload)
+	err = service.handleLightMessage("room-light/living-room", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -229,7 +229,7 @@ func TestHandleLightMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to marshal JSON: %v", err)
 	}
-	err := service.handleLightMessage("room-light/office", payload)
+	err = service.handleLightMessage("room-light/office", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}

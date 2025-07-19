@@ -64,7 +64,7 @@ func TestAddMotionCallback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to marshal JSON: %v", err)
 	}
-	err := service.handleMotionMessage("room-motion/living-room", payload)
+	err = service.handleMotionMessage("room-motion/living-room", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -205,7 +205,7 @@ func TestHandleMotionMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to marshal JSON: %v", err)
 	}
-	err := service.handleMotionMessage("room-motion/office", payload)
+	err = service.handleMotionMessage("room-motion/office", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}

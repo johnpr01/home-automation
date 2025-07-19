@@ -293,7 +293,7 @@ func TestHandleTemperatureMessage(t *testing.T) {
 	payload, err := json.Marshal(tempData)
 
 	// Test handling the message
-	err := service.handleTemperatureMessage("room-temp/kitchen", payload)
+	err = service.handleTemperatureMessage("room-temp/kitchen", payload)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
