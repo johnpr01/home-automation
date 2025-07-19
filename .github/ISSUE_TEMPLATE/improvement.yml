@@ -1,0 +1,96 @@
+name: Improvement Request
+description: Suggest an improvement or refactoring
+title: "[Improvement]: "
+labels: ["improvement", "refactoring"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest an improvement!
+        
+  - type: dropdown
+    id: type
+    attributes:
+      label: Improvement Type
+      description: What type of improvement is this?
+      options:
+        - Code Refactoring
+        - Performance Optimization
+        - Security Enhancement
+        - Testing Improvement
+        - Documentation Update
+        - Development Experience
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: service
+    attributes:
+      label: Affected Service/Component
+      description: Which service or component would be improved?
+      placeholder: light-service, build system, tests
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current State
+      description: Describe the current state or implementation
+      placeholder: Currently, the code...
+    validations:
+      required: true
+
+  - type: textarea
+    id: improvement
+    attributes:
+      label: Proposed Improvement
+      description: Describe the improvement you'd like to make
+      placeholder: We could improve this by...
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: Benefits
+      description: What are the benefits of this improvement?
+      placeholder: |
+        - Better performance
+        - More maintainable code
+        - Improved security
+    validations:
+      required: true
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks and Mitigation
+      description: What are the potential risks and how can they be mitigated?
+      placeholder: |
+        Risks:
+        - Potential performance impact
+        - Breaking changes
+        
+        Mitigation:
+        - Performance testing before/after
+        - Deprecation period for breaking changes
+
+  - type: checkboxes
+    id: considerations
+    attributes:
+      label: Implementation Considerations
+      description: Please check all that apply
+      options:
+        - label: This change requires backward compatibility considerations
+        - label: This change requires documentation updates
+        - label: This change requires test updates
+        - label: This change affects production configuration
+        - label: This change requires dependency updates
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the improvement here

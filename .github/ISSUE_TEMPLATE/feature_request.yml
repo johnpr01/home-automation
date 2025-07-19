@@ -1,0 +1,77 @@
+name: Feature Request
+description: Suggest an idea for this project
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest a new feature!
+        
+  - type: dropdown
+    id: service
+    attributes:
+      label: Related Service
+      description: Which service would this feature be part of?
+      options:
+        - Light Service
+        - Thermostat Service
+        - MQTT Integration
+        - General Infrastructure
+        - New Service
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Description
+      description: Is your feature request related to a problem? Please describe.
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like
+      placeholder: A clear and concise description of what you want to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe alternatives you've considered
+      placeholder: What alternative solutions have you considered?
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Details
+      description: Any thoughts on how this could be implemented?
+      placeholder: |
+        Technical considerations:
+        - API changes needed
+        - Database changes
+        - Configuration updates
+
+  - type: checkboxes
+    id: considerations
+    attributes:
+      label: Additional Considerations
+      description: Please confirm these have been considered
+      options:
+        - label: This feature would be backward compatible
+        - label: This feature would require documentation updates
+        - label: This feature would require new tests
+        - label: This feature would affect performance
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the feature request here
