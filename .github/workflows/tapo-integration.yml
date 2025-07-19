@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     
     # Only run if TPLINK_PASSWORD secret is available
-    if: ${{ secrets.TPLINK_PASSWORD }}
+    if: ${{ secret.TPLINK_PASSWORD }}
     
     strategy:
       matrix:
