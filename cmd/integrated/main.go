@@ -25,9 +25,6 @@ func main() {
 	customLogger := logger.NewLogger("IntegratedService", kafkaClient)
 	customLogger.Info("Starting Integrated Home Automation Service...")
 
-	// Create standard logger for services that expect it
-	stdLogger := log.New(os.Stdout, "[IntegratedService] ", log.LstdFlags)
-
 	// Load MQTT configuration
 	mqttConfig := &config.MQTTConfig{
 		Broker:   "localhost",
@@ -45,16 +42,23 @@ func main() {
 
 	customLogger.Info("Connected to MQTT broker")
 
-	// Kafka client is already created above
+	// Create service loggers
+	motionLogger := logger.NewLogger("MotionService", kafkaClient)
+	lightLogger := logger.NewLogger("LightService", kafkaClient)
+	thermostatLogger := logger.NewLogger("ThermostatService", kafkaClient)
+	deviceLogger := logger.NewLogger("DeviceService", kafkaClient)
 
 	// Create independent services
-	motionService := services.NewMotionService(mqttClient, stdLogger)
-	lightService := services.NewLightService(mqttClient, stdLogger)
-	thermostatService := services.NewThermostatService(mqttClient, customLogger)
-	deviceService := services.NewDeviceService(mqttClient, kafkaClient)
+	motionService := services.NewMotionService(mqttClient, motionLogger)
+	lightService := services.NewLightService(mqttClient, lightLogger)
+	thermostatService := services.NewThermostatService(mqttClient, thermostatLogger)
+	deviceService := services.NewDeviceService(mqttClient, deviceLogger)
+
+	// Create automation service logger
+	automationLogger := logger.NewLogger("AutomationService", kafkaClient)
 
 	// Create automation service that coordinates between sensors and devices
-	automationService := services.NewAutomationService(motionService, lightService, deviceService, mqttClient, stdLogger)
+	automationService := services.NewAutomationService(motionService, lightService, deviceService, mqttClient, automationLogger)
 
 	customLogger.Info("🏠 Automation Service: Motion-activated lighting enabled!")
 	customLogger.Info("📋 Rules: When motion detected + dark conditions → Turn on lights")
